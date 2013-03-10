@@ -1,0 +1,27 @@
+{
+    "name": "underscore-query",
+    "description": "Lightweight Query API mixin for Underscore",
+    "version": "0.1.2",
+    "author": "Dave Tonge <dave@simplecreativity.co.uk> (https://github.com/davidgtonge)",
+    "tags": [
+        "underscore",
+        "mongo",
+        "query"
+    ],
+    "main": "./lib/underscore-query",
+    "repository": {
+        "type": "git",
+        "url": "https://davidgtonge@github.com/davidgtonge/underscore-query.git"
+    },
+    "dependencies": {
+        "underscore": ">=1.1.x"
+    },
+    "devDependencies": {
+        "coffee-script": ">=1.x.x",
+        "mocha": "",
+        "uglify-js": "1.2.2"
+    },
+    "scripts": {
+        "test": "mocha"
+    }
+}
