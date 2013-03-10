@@ -31,9 +31,6 @@ Installation
 To install, include the `lib/underscore-query.min.js` file in your HTML page, after Underscore (or Lodash).
 `_.query` will now be available for you to use.
 
-Underscore Query is also available via [Jam](http://jamjs.org/). Jam is a package manager for
-browser js packages and uses require.js. This is the recommended method of you want to use
-this library with require.js. To install, simply run `jam install underscore-query`.
 
 #### Server side (node.js) installation
 You can install with NPM: `npm install underscore-query`
