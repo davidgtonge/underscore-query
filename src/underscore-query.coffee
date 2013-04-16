@@ -226,8 +226,18 @@ buildQuery = (items, getter, isParsed) ->
         out
   out
 
+# Create a *test* function that checks if the object or objects match the query
+makeTest = (query, getter) ->
+  parsedQuery = parseQuery(query)
+  (items) ->
+    items = [items] unless utils.isArray(items)
+    runQuery(items, parsedQuery, getter, true).length is items.length
+
 # The main function to be mxied into underscore that takes a collection and a raw query
 runQuery = (items, query, getter, isParsed) ->
+  if arguments.length < 2
+    # If no arguments or only the items are provided, then use the buildQuery interface
+    return buildQuery.apply this, arguments
   query = parseQuery(query) unless isParsed
   if utils.getType(getter) is "String"
     method = getter
@@ -238,5 +248,6 @@ runQuery = (items, query, getter, isParsed) ->
 
 runQuery.build = buildQuery
 runQuery.parse = parseQuery
+runQuery.tester = makeTest
 _.mixin
   query:runQuery

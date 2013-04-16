@@ -18,10 +18,12 @@ output =
 
 
 wrap = (code) ->  """
-(function (root) {
-  var require = root.require || function(name) { return root[name]; };
+(function (require) {
+
   #{code}
-}).call(this);
+}).call(this,  typeof exports !== 'undefined' ? require : function(id) {
+  return this[id === 'underscore' ? '_' : id];
+});
 """
 
 task 'build', 'build  from source',  ->

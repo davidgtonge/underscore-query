@@ -2,7 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-require "../src/underscore-query"
+require "../lib/underscore-query"
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -475,12 +475,15 @@ describe "Underscore Query Tests", ->
   it "can be used for live collections", ->
     Backbone = require "backbone"
     class Collection extends Backbone.Collection
-      query: (params) -> _.query @models, params, "get"
+      query: (params) ->
+        if params
+          _.query @models, params, "get"
+        else
+          _.query.build @models, null, "get"
       whereBy: (params) -> new @constructor @query(params)
-      buildQuery: -> _.buildQuery @models, "get"
       setFilter: (parent, query) ->
-        query = _.query.parse(query) #cache the parsed query
-        check = (model) -> _.query([model], query, "get", true).length
+
+        check = _.query.tester(query, "get")
 
         @listenTo parent,
           add: (model) -> if check(model) then @add(model)
@@ -488,7 +491,7 @@ describe "Underscore Query Tests", ->
           change: (model) ->
             if check(model) then @add(model) else @remove(model)
 
-        @add _.query(parent.models, query, "get", true)
+        @add _.query(parent.models, query, "get")
 
     parent = new Collection [
       {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
