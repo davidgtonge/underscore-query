@@ -479,7 +479,7 @@ describe "Underscore Query Tests", ->
         if params
           _.query @models, params, "get"
         else
-          _.query.build @models, null, "get"
+          _.query.build @models, "get"
       whereBy: (params) -> new @constructor @query(params)
       setFilter: (parent, query) ->
 
