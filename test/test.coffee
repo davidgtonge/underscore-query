@@ -2,7 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-require "../lib/underscore-query"
+require "../src/underscore-query"
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -568,3 +568,27 @@ describe "Underscore Query Tests", ->
 
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
+
+  it "$computed", ->
+    Backbone = require "backbone"
+    class testModel extends Backbone.Model
+      full_name: -> "#{@get 'first_name'} #{@get 'last_name'}"
+
+    a = new testModel
+      first_name: "Dave"
+      last_name: "Tonge"
+    b = new testModel
+      first_name: "John"
+      last_name: "Smith"
+    c = [a,b]
+
+    result = _.query c,
+      full_name: $computed: "Dave Tonge"
+
+    assert.equal result.length, 1
+    assert.equal result[0].get("first_name"), "Dave"
+
+    result = _.query c,
+      full_name: $computed: $likeI: "n sm"
+    assert.equal result.length, 1
+    assert.equal result[0].get("first_name"), "John"

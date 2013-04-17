@@ -19,6 +19,7 @@
     "devDependencies": {
         "coffee-script": ">=1.x.x",
         "mocha": "",
+        "backbone":"",
         "uglify-js": "1.2.2"
     },
     "scripts": {

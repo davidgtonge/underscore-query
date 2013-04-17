@@ -44,6 +44,61 @@ utils.compoundKeys = ["$and", "$not", "$or", "$nor"]
 # The seperator string for nested property lookup
 utils.seperator = "."
 
+utils.$computedGetter = (model, key) ->
+  model[key]?()
+
+
+parseParamType = (query) ->
+  key = utils.keys(query)[0]
+  queryParam = query[key]
+  o = {key}
+
+  # If the key uses dot notation, then create a getter function
+  if key.indexOf(utils.seperator) isnt -1
+    o.getter = utils.getNested(key.split(utils.seperator))
+
+  paramType = utils.getType(queryParam)
+  switch paramType
+  # Test for Regexs and Dates as they can be supplied without an operator
+    when "RegExp", "Date"
+      o.type = "$#{paramType.toLowerCase()}"
+      o.value = queryParam
+
+    when "Object"
+    # If the key is one of the compound keys, then parse the param as a raw query
+      if key in utils.compoundKeys
+        o.type = key
+        o.value = parseSubQuery queryParam
+        o.key = null
+
+        # Otherwise extract the key and value
+      else
+        for type, value of queryParam
+          # Before adding the query, its value is checked to make sure it is the right type
+          if testQueryValue type, value
+            o.type = type
+            switch type
+              when "$elemMatch" then o.value = parseQuery value
+              when "$endsWith" then o.value = utils.reverseString(value)
+              when "$likeI", "$startsWith" then o.value = value.toLowerCase()
+              when "$computed"
+                o = parseParamType(utils.makeObj(key, value))
+                o.getter = utils.$computedGetter
+              else o.value = value
+          else throw new Error("Query value doesn't match query type: #{type}: #{value}")
+  # If the query_param is not an object or a regexp then revert to the default operator: $equal
+    else
+      o.type = "$equal"
+      o.value = queryParam
+
+  # For "$equal" queries with arrays or objects we need to perform a deep equal
+  if (o.type is "$equal") and (paramType in ["Object","Array"])
+    o.type = "$deepEqual"
+
+  # Return the query object
+  return o
+
+
 # This function parses and normalizes raw queries.
 parseSubQuery = (rawQuery) ->
 
@@ -54,49 +109,7 @@ parseSubQuery = (rawQuery) ->
     queryArray = (utils.makeObj(key, val) for own key, val of rawQuery)
 
   # Loop through all the different queries
-  (for query in queryArray
-    # Start building a normalized query object for each query
-    for own key, queryParam of query
-      o = {key}
-      # If the key uses dot notation, then create a getter function
-      if key.indexOf(utils.seperator) isnt -1
-        o.getter = utils.getNested(key.split(utils.seperator))
-
-      paramType = utils.getType(queryParam)
-      switch paramType
-      # Test for Regexs and Dates as they can be supplied without an operator
-        when "RegExp", "Date"
-          o.type = "$#{paramType.toLowerCase()}"
-          o.value = queryParam
-
-        when "Object"
-          # If the key is one of the compound keys, then parse the param as a raw query
-          if key in utils.compoundKeys
-            o.type = key
-            o.value = parseSubQuery queryParam
-            o.key = null
-
-          # Otherwise extract the key and value
-          else
-            for type, value of queryParam
-              # Before adding the query, its value is checked to make sure it is the right type
-              if testQueryValue type, value
-                o.type = type
-                switch type
-                  when "$elemMatch" then o.value = parseQuery value
-                  when "$endsWith" then o.value = utils.reverseString(value)
-                  when "$likeI", "$startsWith" then o.value = value.toLowerCase()
-                  else o.value = value
-              else throw new Error("Query value doesn't match query type: #{type}: #{value}")
-      # If the query_param is not an object or a regexp then revert to the default operator: $equal
-        else
-          o.type = "$equal"
-          o.value = queryParam
-
-      # For "$equal" queries with arrays or objects we need to perform a deep equal
-      if (o.type is "$equal") and (paramType in ["Object","Array"])
-        o.type = "$deepEqual"
-    o)
+  (parseParamType(query) for query in queryArray)
 
 
 # Tests query value, to ensure that it is of the correct type
@@ -166,7 +179,7 @@ iterator = (models, query, type, getter) ->
     for q in query
       # Retrieve the attribute value from the model
       if q.getter
-        attr = q.getter model
+        attr = q.getter model, q.key
       else if getter
         attr = getter model, q.key
       else
