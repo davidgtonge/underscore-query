@@ -2,7 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-require "../src/underscore-query"
+require "../src/underscore-query-functional"
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}

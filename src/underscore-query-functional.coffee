@@ -14,7 +14,7 @@ _ = require('underscore')
 # We assign local references to the underscore methods used.
 # This way we can easily remove underscore as a dependecy for other versions of the library
 utils = {}
-for key in ["every", "some", "filter", "reject", "reduce", "intersection", "isEqual", "keys", "isArray", "result"]
+for key in ["every", "some", "filter", "detect", "reject", "reduce", "intersection", "isEqual", "keys", "isArray", "result"]
   utils[key] = _[key]
 
 # Returns a string denoting the type of object
@@ -27,26 +27,20 @@ utils.makeObj = (key, val)->
   (o = {})[key] = val
   o
 
-# Returns a function that retrieves the nested value fron an array of nested keys
-utils.getNested = (keyArray) ->
-  (obj) ->
-    out = obj
-    for key in keyArray
-      if out then out = out[key]
-    out
-
 # Reverses a string
 utils.reverseString = (str) -> str.toLowerCase().split("").reverse().join("")
 
 # An array of the compound modifers that can be used in queries
 utils.compoundKeys = ["$and", "$not", "$or", "$nor"]
 
-# The seperator string for nested property lookup
-utils.seperator = "."
-
-utils.$computedGetter = (model, key) ->
-  model[key]?()
-
+# Returns a getter function that works with dot notation and named functions
+utils.makeGetter = (keys) ->
+  keys = keys.split(".")
+  (obj) ->
+    out = obj
+    for key in keys
+      if out then out = utils.result(out,key)
+    out
 
 parseParamType = (query) ->
   key = utils.keys(query)[0]
@@ -54,8 +48,8 @@ parseParamType = (query) ->
   o = {key}
 
   # If the key uses dot notation, then create a getter function
-  if key.indexOf(utils.seperator) isnt -1
-    o.getter = utils.getNested(key.split(utils.seperator))
+  if key.indexOf(".") isnt -1
+    o.getter = utils.makeGetter(key)
 
   paramType = utils.getType(queryParam)
   switch paramType
@@ -78,14 +72,14 @@ parseParamType = (query) ->
           if testQueryValue type, value
             o.type = type
             switch type
-              when "$elemMatch" then o.value = parseQuery value
+              when "$elemMatch" then o.value = single(parseQuery(value))
               when "$endsWith" then o.value = utils.reverseString(value)
               when "$likeI", "$startsWith" then o.value = value.toLowerCase()
               when "$computed"
                 o = parseParamType(utils.makeObj(key, value))
-                o.getter = utils.$computedGetter
+                o.getter = utils.makeGetter(key)
               else o.value = value
-          else throw new Error("Query value doesn't match query type: #{type}: #{value}")
+          else throw new Error("Query value (#{value}) doesn't match query type: (#{type})")
   # If the query_param is not an object or a regexp then revert to the default operator: $equal
     else
       o.type = "$equal"
@@ -163,39 +157,61 @@ performQuery = (type, value, attr, model, getter) ->
     when "$regex", "$regexp" then value.test attr
     when "$cb"              then value.call model, attr
     when "$mod"             then (attr % value[0]) is value[1]
-    when "$elemMatch"       then (runQuery(attr,value, null, true)).length > 0
+    when "$elemMatch"       then (runQuery(attr,value, null, true))
     when "$and", "$or", "$nor", "$not"
-      iterator([model], value, type, getter).length is 1
+      performQuerySingle(type, value, getter, model)
     else false
 
+# This function should accept an obj like this:
+# $and: [queries], $or: [queries]
+# should return false if fails
+single = (queries, getter) ->
+  if utils.getType(getter) is "String"
+    method = getter
+    getter = (obj, key) -> obj[method](key)
+  (model) ->
+    for queryObj in queries
+      # Early false return if any of the queries fail
+      return false unless performQuerySingle(queryObj.type, queryObj.parsedQuery, getter, model)
+    # All queries passes, so return true
+    true
 
-# The main iterator that actually applies the query
-iterator = (models, query, type, getter) ->
-  filterFunction = if type in ["$and","$or"] then utils.filter else utils.reject
-  andOr = (type in ["$or","$nor"])
-  # The collections filter or reject method is used to iterate through each model in the collection
-  filterFunction models, (model) ->
-    # For each model in the collection, iterate through the supplied queries
-    for q in query
-      # Retrieve the attribute value from the model
-      if q.getter
-        attr = q.getter model, q.key
-      else if getter
-        attr = getter model, q.key
-      else
-        attr = model[q.key]
+performQuerySingle = (type, query, getter, model) ->
+  passes = 0
+  for q in query
+    if q.getter
+      attr = q.getter model, q.key
+    else if getter
+      attr = getter model, q.key
+    else
+      attr = model[q.key]
+    # Check if the attribute value is the right type (some operators need a string, or an array)
+    test = testModelAttribute(q.type, attr)
+    # If the attribute test is true, perform the query
+    if test then test = performQuery q.type, q.value, attr, model, getter
+    if test then passes++
+    switch type
+      when "$and"
+        # Early false return for $and queries when any test fails
+        return false unless test
+      when "$not"
+        # Early false return for $not queries when any test passes
+        return false if test
+      when "$or"
+        # Early true return for $or queries when any test passes
+        return true if test
+      when "$nor"
+        # Early false return for $nor queries when any test passes
+        return false if test
 
-      # Check if the attribute value is the right type (some operators need a string, or an array)
-      test = testModelAttribute(q.type, attr)
-      # If the attribute test is true, perform the query
-      if test then test = performQuery q.type, q.value, attr, model, getter
-      # If the query is an "or" query than as soon as a match is found we return "true"
-      # Whereas if the query is an "and" query then we return "false" as soon as a match isn't found.
-      return andOr if andOr is test
-
-    # For an "or" query, if all the queries are false, then we return false
-    # For an "and" query, if all the queries are true, then we return true
-    not andOr
+  # For not queries, check that all tests have failed
+  if type is "$not"
+    passes is 0
+  # $or queries have failed as no tests have passed
+  # $and queries have passed as no tests failed
+  # $nor queries have passes as no tests passed
+  else
+    type isnt "$or"
 
 
 # The main function to parse raw queries.
@@ -221,46 +237,61 @@ parseQuery = (query) ->
       {type, parsedQuery:parseSubQuery(query[type])})
 
 
+class QueryBuilder
+  constructor: (@items, @_getter) ->
+    @theQuery = {}
+
+  all: (items = @items) ->
+    runQuery(items, @theQuery, @_getter)
+
+  chain: -> _.chain(@all.apply(this, arguments))
+
+  tester: -> makeTest(@theQuery, @_getter)
+
+  first: (items = @items) ->
+    runQuery(items, @theQuery, @_getter, true)
+
+  getter: (@_getter) ->
+    this
+
+addToQuery = (type) ->
+  (params, qVal) ->
+    if qVal
+      params = utils.makeObj params, qVal
+    @theQuery[type] ?= []
+    @theQuery[type].push params
+    this
+
+for key in utils.compoundKeys
+  QueryBuilder::[key.substr(1)] = addToQuery(key)
+
+QueryBuilder::find = QueryBuilder::query = QueryBuilder::run = QueryBuilder::all
+
 # Build Query function for progamatically building up queries before running them.
-buildQuery = (items, getter, isParsed) ->
-  out = {items, getter, isParsed, theQuery:{}}
-  out.all = out.find = out.query = out.run = (items = out.items, getter = out.getter, isParsed = out.isParsed) ->
-    runQuery(items, out.theQuery, getter, isParsed)
-  out.first = -> out.all.apply(this, arguments)?[0]
-  out.chain = -> _.chain(out.all.apply(this, arguments))
-  for key in utils.compoundKeys
-    do (key) ->
-      op = key.substr(1)
-      out[op] = (params, qVal) ->
-        if qVal
-          params = utils.makeObj params, qVal
-        out.theQuery[key] ?= []
-        out.theQuery[key].push params
-        out
-  out
+buildQuery = (items, getter) -> new QueryBuilder(items, getter)
 
 # Create a *test* function that checks if the object or objects match the query
-makeTest = (query, getter) ->
-  parsedQuery = parseQuery(query)
-  (items) ->
-    items = [items] unless utils.isArray(items)
-    runQuery(items, parsedQuery, getter, true).length is items.length
+makeTest = (query, getter) -> single(parseQuery(query), getter)
+
+# Find one function that returns first matching result
+findOne = (items, query, getter) -> runQuery(items, query, getter, true)
 
 # The main function to be mxied into underscore that takes a collection and a raw query
-runQuery = (items, query, getter, isParsed) ->
+runQuery = (items, query, getter, first) ->
   if arguments.length < 2
     # If no arguments or only the items are provided, then use the buildQuery interface
     return buildQuery.apply this, arguments
-  query = parseQuery(query) unless isParsed
-  if utils.getType(getter) is "String"
-    method = getter
-    getter = (obj, key) -> obj[method](key)
-  reduceIterator = (memo, queryItem) ->
-    iterator memo, queryItem.parsedQuery, queryItem.type, getter
-  utils.reduce(query, reduceIterator, items)
+  query = single(parseQuery(query), getter) unless (utils.getType(query) is "Function")
+  fn = if first then utils.detect else utils.filter
+  fn items, query
+
 
 runQuery.build = buildQuery
 runQuery.parse = parseQuery
-runQuery.tester = makeTest
+runQuery.findOne = runQuery.first = findOne
+runQuery.tester = runQuery.testWith = makeTest
+runQuery.getter = runQuery.pluckWith = utils.makeGetter
 _.mixin
   query:runQuery
+  q:runQuery
+module?.exports = runQuery
