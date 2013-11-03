@@ -1,11 +1,12 @@
 {
     "name": "underscore-query",
-    "description": "Lightweight Query API mixin for Underscore",
-    "version": "0.2.0",
+    "description": "Lightweight Query API mixin for Underscore or Lodash",
+    "version": "0.4.0",
     "author": "Dave Tonge <dave@simplecreativity.co.uk> (https://github.com/davidgtonge)",
     "tags": [
         "underscore",
         "mongo",
+        "lodash",
         "query"
     ],
     "main": "./lib/underscore-query",
@@ -20,7 +21,9 @@
         "coffee-script": ">=1.x.x",
         "mocha": "",
         "backbone":"",
-        "uglify-js": "1.2.2"
+        "uglify-js": "",
+        "handlebars": "",
+        "lodash":""
     },
     "scripts": {
         "test": "mocha"

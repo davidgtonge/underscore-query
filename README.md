@@ -31,12 +31,43 @@ Installation
 To install, include the `lib/underscore-query.min.js` file in your HTML page, after Underscore (or Lodash).
 `_.query` will now be available for you to use.
 
+If you use AMD, then you can use "lib/underscore-query.amd.js".
+This will return a function that accepts either underscore or lodash. This function
+also accepts an optional boolean argument on whether to mixin the query methods to underscore/lodash.
+If you are using AMD and you want the methods mixed in, then you'd only need to require "underscore-query" once
+probably in your init script:
+
+```js
+define('myModule',
+    ['underscore', 'underscore-query'],
+    function ( _, underscoreQuery ) {
+        // opt 1
+        underscoreQuery(_); // _.query is now available on the underscore module
+        // opt 2
+        var query = underscoreQuery(_, false) // query is available as a local variable with all the query methods
+    }
+```
 
 #### Server side (node.js) installation
 You can install with NPM: `npm install underscore-query`
-Then simply require in your project after underscore:
-`_ = require("underscore");`
-`require("underscore-query");`
+The library can work with either lodash or underscore, when you first require it in it exposes a method that takes
+either underscore or lodash:
+
+```ja
+// With Underscore
+_ = require("underscore");
+require("underscore-query")(_);
+
+// With Lodash
+_ = require("lodash");
+require("underscore-query(_);
+
+// If you don't want the query methods 'mixed in'
+_ = require("underscore");
+query = require("underscore-query")(_, false);
+```
+
+
 
 Basic Usage
 ===========
@@ -475,7 +506,26 @@ titles = _.query.build( MyCollection )
   .value();
 ```
 
+Indexing
+========
 
+
+More documentation coming...
+Essentially you can add indexes when using the chainable syntax.
+You can then perform queries as usual, but the results, should be faster on larger sets
+I suggest that you benchmark your code to test this out.
+The index method takes either a single key, or a key and a function.
+
+
+```coffeescript
+
+    query = _.query(array)
+      .index("title")
+
+    # could have been .index("title", (obj) -> obj.title)
+
+    result = query.and("title", "Home").run()
+```
 
 
 

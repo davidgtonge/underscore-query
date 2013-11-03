@@ -1,9 +1,9 @@
 # Requires
 require "coffee-script"
 assert = require('assert')
-_ = require "underscore"
-require("../lib/underscore-query")(_)
-#require("../src/underscore-query")(_)
+_ = require "lodash"
+#require "../lib/underscore-query"
+require("../src/underscore-query")(_)
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}

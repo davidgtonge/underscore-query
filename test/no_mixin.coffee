@@ -2,8 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-require("../lib/underscore-query")(_)
-#require("../src/underscore-query")(_)
+_query = require("../src/underscore-query")(_, false)
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -17,182 +16,182 @@ describe "Underscore Query Tests", ->
 
   it "Equals query", ->
     a = create()
-    result = _.query a, title:"Home"
+    result = _query a, title:"Home"
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
-    result = _.query a, colors: "blue"
+    result = _query a, colors: "blue"
     assert.equal result.length, 2
 
-    result = _.query a, colors: ["red", "blue"]
+    result = _query a, colors: ["red", "blue"]
     assert.equal result.length, 1
 
   it "Simple equals query (no results)", ->
     a = create()
-    result = _.query a, title:"Homes"
+    result = _query a, title:"Homes"
     assert.equal result.length, 0
 
   it "Simple equals query with explicit $equal", ->
     a = create()
-    result = _.query a, title: {$equal: "About"}
+    result = _query a, title: {$equal: "About"}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "$contains operator", ->
     a = create()
-    result = _.query a, colors: {$contains: "blue"}
+    result = _query a, colors: {$contains: "blue"}
     assert.equal result.length, 2
 
   it "$ne operator", ->
     a = create()
-    result = _.query a, title: {$ne: "Home"}
+    result = _query a, title: {$ne: "Home"}
     assert.equal result.length, 2
 
   it "$lt operator", ->
     a = create()
-    result = _.query a, likes: {$lt: 12}
+    result = _query a, likes: {$lt: 12}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "$lte operator", ->
     a = create()
-    result = _.query a, likes: {$lte: 12}
+    result = _query a, likes: {$lte: 12}
     assert.equal result.length, 2
 
   it "$gt operator", ->
     a = create()
-    result = _.query a, likes: {$gt: 12}
+    result = _query a, likes: {$gt: 12}
     assert.equal result.length, 1
     assert.equal result[0].title, "Contact"
 
   it "$gte operator", ->
     a = create()
-    result = _.query a, likes: {$gte: 12}
+    result = _query a, likes: {$gte: 12}
     assert.equal result.length, 2
 
   it "$between operator", ->
     a = create()
-    result = _.query a, likes: {$between: [1,5]}
+    result = _query a, likes: {$between: [1,5]}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "$mod operator", ->
     a = create()
-    result = _.query a, likes: {$mod: [3,0]}
+    result = _query a, likes: {$mod: [3,0]}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$in operator", ->
     a = create()
-    result = _.query a, title: {$in: ["Home","About"]}
+    result = _query a, title: {$in: ["Home","About"]}
     assert.equal result.length, 2
 
   it "$in operator with wrong query value", ->
     a = create()
     assert.throws ->
-       _.query a, title: {$in: "Home"}
+       _query a, title: {$in: "Home"}
 
   it "$nin operator", ->
     a = create()
-    result = _.query a, title: {$nin: ["Home","About"]}
+    result = _query a, title: {$nin: ["Home","About"]}
     assert.equal result.length, 1
     assert.equal result[0].title, "Contact"
 
   it "$all operator", ->
     a = create()
-    result = _.query a, colors: {$all: ["red","blue"]}
+    result = _query a, colors: {$all: ["red","blue"]}
     assert.equal result.length, 2
 
   it "$all operator (wrong values)", ->
     a = create()
-    result = _.query a, title: {$all: ["red","blue"]}
+    result = _query a, title: {$all: ["red","blue"]}
     assert.equal result.length, 0
 
     assert.throws ->
-      _.query a, colors: {$all: "red"}
+      _query a, colors: {$all: "red"}
 
   it "$any operator", ->
     a = create()
-    result = _.query a, colors: {$any: ["red","blue"]}
+    result = _query a, colors: {$any: ["red","blue"]}
     assert.equal result.length, 3
 
-    result = _.query a, colors: {$any: ["yellow","blue"]}
+    result = _query a, colors: {$any: ["yellow","blue"]}
     assert.equal result.length, 2
 
   it "$size operator", ->
     a = create()
-    result = _.query a, colors: {$size: 3}
+    result = _query a, colors: {$size: 3}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$exists operator", ->
     a = create()
-    result = _.query a, featured: {$exists: true}
+    result = _query a, featured: {$exists: true}
     assert.equal result.length, 2
 
   it "$has operator", ->
     a = create()
-    result = _.query a, featured: {$exists: false}
+    result = _query a, featured: {$exists: false}
     assert.equal result.length, 1
     assert.equal result[0].title, "Contact"
 
   it "$like operator", ->
     a = create()
-    result = _.query a, content: {$like: "javascript"}
+    result = _query a, content: {$like: "javascript"}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "$like operator 2", ->
     a = create()
-    result = _.query a, content: {$like: "content"}
+    result = _query a, content: {$like: "content"}
     assert.equal result.length, 3
 
   it "$likeI operator", ->
     a = create()
-    result = _.query a, content: {$likeI: "dummy"}
+    result = _query a, content: {$likeI: "dummy"}
     assert.equal result.length, 3
-    result = _.query a, content: {$like: "dummy"}
+    result = _query a, content: {$like: "dummy"}
     assert.equal result.length, 1
 
   it "$startsWith operator", ->
     a = create()
-    result = _.query a, title: {$startsWith: "Ho"}
+    result = _query a, title: {$startsWith: "Ho"}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$endsWith operator", ->
     a = create()
-    result = _.query a, title: {$endsWith: "me"}
+    result = _query a, title: {$endsWith: "me"}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
 
   it "$regex", ->
     a = create()
-    result = _.query a, content: {$regex: /javascript/gi}
+    result = _query a, content: {$regex: /javascript/gi}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "$regex2", ->
     a = create()
-    result = _.query a, content: {$regex: /dummy/}
+    result = _query a, content: {$regex: /dummy/}
     assert.equal result.length, 1
 
   it "$regex3", ->
     a = create()
-    result = _.query a, content: {$regex: /dummy/i}
+    result = _query a, content: {$regex: /dummy/i}
     assert.equal result.length, 3
 
   it "$regex4", ->
     a = create()
-    result = _.query a, content: /javascript/i
+    result = _query a, content: /javascript/i
     assert.equal result.length, 1
 
   it "$cb - callback", ->
     a = create()
     fn = (attr) ->
       attr.charAt(0).toLowerCase() is "c"
-    result = _.query a,
+    result = _query a,
       title: $cb: fn
 
     assert.equal result.length, 1
@@ -200,45 +199,45 @@ describe "Underscore Query Tests", ->
 
   it "$cb - callback - checking 'this' is the model", ->
     a = create()
-    result = _.query a, title:
+    result = _query a, title:
       $cb: (attr) -> @title is "Home"
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$and operator", ->
     a = create()
-    result = _.query a, likes: {$gt: 5}, colors: {$contains: "yellow"}
+    result = _query a, likes: {$gt: 5}, colors: {$contains: "yellow"}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$and operator (explicit)", ->
     a = create()
-    result = _.query a, $and: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
+    result = _query a, $and: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
   it "$or operator", ->
     a = create()
-    result = _.query a, $or: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
+    result = _query a, $or: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
     assert.equal result.length, 2
 
   it "$or2 operator", ->
     a = create()
-    result = _.query a, $or: {likes: {$gt: 5}, featured: true}
+    result = _query a, $or: {likes: {$gt: 5}, featured: true}
     assert.equal result.length, 3
 
   it "$nor operator", ->
     a = create()
-    result = _.query a, $nor: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
+    result = _query a, $nor: {likes: {$gt: 5}, colors: {$contains: "yellow"}}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
   it "Compound Queries", ->
     a = create()
-    result = _.query a, $and: {likes: {$gt: 5}}, $or: {content: {$like: "PHP"},  colors: {$contains: "yellow"}}
+    result = _query a, $and: {likes: {$gt: 5}}, $or: {content: {$like: "PHP"},  colors: {$contains: "yellow"}}
     assert.equal result.length, 2
 
-    result = _.query a,
+    result = _query a,
       $and:
         likes: $lt: 15
       $or:
@@ -281,33 +280,33 @@ describe "Underscore Query Tests", ->
 
     text_search = {$likeI: "love"}
 
-    result = _.query a, $or:
+    result = _query a, $or:
       comments:
         $elemMatch:
           text: text_search
       title: text_search
     assert.equal result.length, 2
 
-    result = _.query a, $or:
+    result = _query a, $or:
       comments:
         $elemMatch:
           text: /post/
     assert.equal result.length, 1
 
-    result = _.query a, $or:
+    result = _query a, $or:
       comments:
         $elemMatch:
           text: /post/
       title: /about/i
     assert.equal result.length, 2
 
-    result = _.query a, $or:
+    result = _query a, $or:
       comments:
         $elemMatch:
           text: /really/
     assert.equal result.length, 1
 
-    result = _.query b,
+    result = _query b,
       foo:
         $elemMatch:
           shape:"square"
@@ -326,7 +325,7 @@ describe "Underscore Query Tests", ->
     d = name: "test3", tags1: ["red","yellow","blue"], tags2: ["green"]
     e = [a,b,c,d]
 
-    result = _.query e,
+    result = _query e,
       tags1: $any: ["red","purple"] # should match a, b, d
       tags2: $all: ["orange","green"] # should match a, c
 
@@ -347,7 +346,7 @@ describe "Underscore Query Tests", ->
       ]}
     ]
 
-    result = _.query a,
+    result = _query a,
       comments:
         $elemMatch:
           $not:
@@ -362,7 +361,7 @@ describe "Underscore Query Tests", ->
       {equ:'ok', same: 'ok'},
       {equ:'ok', same: 'ok'}
     ]
-    result = _.query Col,
+    result = _query Col,
       $and:
         equ: 'ok'         # Matches both items
         $or:
@@ -375,7 +374,7 @@ describe "Underscore Query Tests", ->
       {equ:'ok', same: 'ok'},
       {equ:'ok', same: 'ok'}
     ]
-    result = _.query Col,
+    result = _query Col,
       equ: 'bogus'        # Matches nothing
       $or:
         same: 'ok'        # Matches all items, but due to implicit $and, this subquery should not affect the result
@@ -383,7 +382,7 @@ describe "Underscore Query Tests", ->
 
   it "Testing nested compound operators", ->
     a = create()
-    result = _.query a,
+    result = _query a,
       $and:
         colors: $contains: "blue" # Matches 1,3
         $or:
@@ -398,7 +397,7 @@ describe "Underscore Query Tests", ->
     # Or matches 3
     assert.equal result.length, 1
 
-    result = _.query a,
+    result = _query a,
       $and:
         colors: $contains: "blue" # Matches 1,3
         $or:
@@ -415,7 +414,7 @@ describe "Underscore Query Tests", ->
 
   it "works with queries supplied as arrays", ->
     a = create()
-    result = _.query a,
+    result = _query a,
       $or: [
         {title:"Home"}
         {title:"About"}
@@ -443,16 +442,16 @@ describe "Underscore Query Tests", ->
       {id:1, title:"test"}
       {id:2, title:"about"}
     ]
-    result = _.query a.models, {title:"about"}, "get"
+    result = _query a.models, {title:"about"}, "get"
     assert.equal result.length, 1
     assert.equal result[0].get("title"), "about"
 
   it "can be mixed into backbone collections", ->
     Backbone = require "backbone"
     class Collection extends Backbone.Collection
-      query: (params) -> _.query @models, params, "get"
+      query: (params) -> _query @models, params, "get"
       whereBy: (params) -> new @constructor @query(params)
-      buildQuery: -> _.query.build @models, "get"
+      buildQuery: -> _query.build @models, "get"
 
     a = new Collection [
       {id:1, title:"test"}
@@ -480,13 +479,13 @@ describe "Underscore Query Tests", ->
     class Collection extends Backbone.Collection
       query: (params) ->
         if params
-          _.query @models, params, "get"
+          _query @models, params, "get"
         else
-          _.query.build @models, "get"
+          _query.build @models, "get"
       whereBy: (params) -> new @constructor @query(params)
       setFilter: (parent, query) ->
 
-        check = _.query.tester(query, "get")
+        check = _query.tester(query, "get")
 
         @listenTo parent,
           add: (model) -> if check(model) then @add(model)
@@ -494,7 +493,7 @@ describe "Underscore Query Tests", ->
           change: (model) ->
             if check(model) then @add(model) else @remove(model)
 
-        @add _.query(parent.models, query, "get")
+        @add _query(parent.models, query, "get")
 
     parent = new Collection [
       {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -525,7 +524,7 @@ describe "Underscore Query Tests", ->
 
   it "buildQuery works in oo fashion", ->
     a = create()
-    query = _.query.build(a)
+    query = _query.build(a)
       .and({likes: {$gt: 5}})
       .or({content: {$like: "PHP"}})
       .or({colors: {$contains: "yellow"}})
@@ -534,7 +533,7 @@ describe "Underscore Query Tests", ->
 
     assert.equal result.length, 2
 
-    result = _.query.build()
+    result = _query.build()
       .and(likes: $lt: 15)
       .or(content: $like: "Dummy")
       .or(featured: $exists: true)
@@ -546,7 +545,7 @@ describe "Underscore Query Tests", ->
 
   it "can have indexes", ->
     a = create()
-    query = _.query(a)
+    query = _query(a)
       .index("title")
 
     assert.ok(query.indexes.title)
@@ -568,11 +567,11 @@ describe "Underscore Query Tests", ->
       {title:"Code", stats:{likes:25, views:{a:{b:796}}}}
     ]
 
-    result = _.query collection, {"stats.likes":5}
+    result = _query collection, {"stats.likes":5}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
-    result = _.query collection, {"stats.views.a.b":796}
+    result = _query collection, {"stats.views.a.b":796}
     assert.equal result.length, 1
     assert.equal result[0].title, "Code"
 
@@ -582,7 +581,7 @@ describe "Underscore Query Tests", ->
       {title:"About", stats:{likes:5, views:{a:{b:234}}}}
       {title:"Code", stats:{likes:25, views:{a:{b:796}}}}
     ]
-    query = _.query.build(collection)
+    query = _query.build(collection)
       .and("title", "Home")
     result = query.run()
 
@@ -602,13 +601,13 @@ describe "Underscore Query Tests", ->
       last_name: "Smith"
     c = [a,b]
 
-    result = _.query c,
+    result = _query c,
       full_name: $computed: "Dave Tonge"
 
     assert.equal result.length, 1
     assert.equal result[0].get("first_name"), "Dave"
 
-    result = _.query c,
+    result = _query c,
       full_name: $computed: $likeI: "n sm"
     assert.equal result.length, 1
     assert.equal result[0].get("first_name"), "John"
