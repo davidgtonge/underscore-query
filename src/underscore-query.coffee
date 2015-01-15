@@ -11,6 +11,10 @@ The aim of the project is to provide a simple, well tested, way of filtering dat
 
 root = this
 
+### UTILS ###
+utils = {}
+
+
 # ES5 / Coffee Replacement for underscore / lodash utils
 underscoreReplacement = ->
   out = {}
@@ -37,9 +41,6 @@ underscoreReplacement = ->
   out.isEqual = (a,b) -> JSON.stringify(a) is JSON.stringify(b)
   out
 
-
-### UTILS ###
-utils = {}
 
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
@@ -249,7 +250,6 @@ performQuerySingle = (type, query, getter, model) ->
         # Early false return for $nor queries when any test passes
         return false if test
       else
-        throw new Error("Invalid compound method")
         throw new Error("Invalid compound method")
 
   # For not queries, check that all tests have failed
