@@ -4,13 +4,13 @@ assert = require('assert')
 _ = require "underscore"
 require("../src/underscore-query")(_)
 
-collection =  [
+_collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
   {title:"About", colors:["red"], likes:2, featured:true, content: "dummy content about javascript"}
   {title:"Contact", colors:["red","blue"], likes:20, content: "Dummy content about PHP"}
 ]
 
-create = -> _.clone(collection)
+create = -> _.clone(_collection)
 
 describe "Underscore Query Tests", ->
 
@@ -596,3 +596,15 @@ describe "Underscore Query Tests", ->
       full_name: $computed: $likeI: "n sm"
     assert.equal result.length, 1
     assert.equal result[0].get("first_name"), "John"
+
+  it "Handles multiple inequalities", ->
+    a = create()
+    result = _.query a, likes: {  $gt: 2, $lt: 20  }
+    assert.equal result.length, 1
+    assert.equal result[0].title, "Home"
+
+  it "Handles nested multiple inequalities", ->
+    a = create()
+    result = _.query a, $and: [likes: {  $gt: 2, $lt: 20  }]
+    assert.equal result.length, 1
+    assert.equal result[0].title, "Home"

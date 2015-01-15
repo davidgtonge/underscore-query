@@ -77,6 +77,10 @@ utils.makeGetter = (keys) ->
       if out then out = utils.result(out,key)
     out
 
+multipleConditions = (key, queries) ->
+  (for type, val of queries
+    utils.makeObj key, utils.makeObj(type, val))
+
 parseParamType = (query) ->
   key = utils.keys(query)[0]
   queryParam = query[key]
@@ -100,7 +104,13 @@ parseParamType = (query) ->
         o.value = parseSubQuery queryParam
         o.key = null
 
-        # Otherwise extract the key and value
+      # Multiple conditions for the same key
+      else if utils.keys(queryParam).length > 1
+        o.type = "$and"
+        o.value = parseSubQuery multipleConditions(key, queryParam)
+        o.key = null
+
+      # Otherwise extract the key and value
       else
         for own type, value of queryParam
           # Before adding the query, its value is checked to make sure it is the right type
