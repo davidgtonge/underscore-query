@@ -2,7 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-_query = require("../src/underscore-query")(_, false)
+_query = require("../src/underscore-query")()
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -423,18 +423,6 @@ describe "Underscore Query Tests", ->
     assert.equal result[0].title, "Home"
     assert.equal result[1].title, "About"
 
-  it "works with underscore chain", ->
-    a = create()
-    q =
-      $or: [
-        {title:"Home"}
-        {title:"About"}
-      ]
-    result = _.chain(a).query(q).pluck("title").value()
-
-    assert.equal result.length, 2
-    assert.equal result[0], "Home"
-    assert.equal result[1], "About"
 
   it "works with a getter property", ->
     Backbone = require "backbone"
@@ -542,22 +530,6 @@ describe "Underscore Query Tests", ->
 
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
-
-  it "can have indexes", ->
-    a = create()
-    query = _query(a)
-      .index("title")
-
-    assert.ok(query.indexes.title)
-    assert.equal(query.indexes.title["Home"].length, 1)
-
-    query.and("title", "Home")
-
-    result = query.run()
-
-    assert.equal _.keys(query.theQuery).length, 0
-    assert.equal result.length, 1
-    assert.equal result[0].title, "Home"
 
 
   it "works with dot notation", ->

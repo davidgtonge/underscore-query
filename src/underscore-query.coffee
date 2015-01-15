@@ -1,6 +1,6 @@
 ###
 Underscore Query - A lightweight query API for JavaScript collections
-(c)2012 - Dave Tonge
+(c)2015 - Dave Tonge
 May be freely distributed according to MIT license.
 
 This is small library that provides a query api for JavaScript arrays similar to *mongo db*.
@@ -11,15 +11,43 @@ The aim of the project is to provide a simple, well tested, way of filtering dat
 
 root = this
 
+# ES5 / Coffee Replacement for underscore / lodash utils
+underscoreReplacement = ->
+  out = {}
+  ["every", "some", "filter", "reduce", "map"].forEach (key) ->
+    out[key] = (array, args...) ->
+      array[key].apply(array, args)
+
+  out.keys = Object.keys
+  out.isArray = Array.isArray
+  out.result = (obj = {}, key) ->
+    if (utils.getType(obj[key]) is "Function") then obj[key]() else obj[key]
+
+  out.detect = (array, fn) ->
+    for item in array when fn(item)
+      return item
+    return
+
+  out.reject = (array, fn) ->
+    (item for item in array when not fn(item))
+
+  out.intersection = (array1, array2) ->
+    (item for item in array1 when array2.indexOf(item) isnt -1)
+
+  out.isEqual = (a,b) -> JSON.stringify(a) is JSON.stringify(b)
+  out
+
+
 ### UTILS ###
-# We assign local references to the underscore methods used.
-# This way we can remove underscore as a dependecy for other versions of the library
 utils = {}
+
+# We assign local references to the underscore methods used.
+# If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
   for key in ["every", "some", "filter", "detect", "reject", "reduce","intersection", "isEqual",
-              "keys", "isArray", "result", "groupBy", "map", "each"]
+              "keys", "isArray", "result", "map"]
     utils[key] = _[key]
-    throw new Error("Please ensure that you first initialize
+    throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
   return
 
@@ -259,31 +287,6 @@ class QueryBuilder
   constructor: (@items, @_getter) ->
     @theQuery = {}
 
-  indexQueries: ->
-    for own type, queries of @theQuery
-      index = 0
-      while index < queries.length
-        query = queries[index]
-        key = utils.keys(query)[0]
-        if (key of @indexes) and (type is "$and") and (utils.getType(query[key]) is "String")
-
-          @_indexQueries[key] = query[key]
-          queries.splice(index, 1)
-        else
-          index++
-      unless queries.length
-        delete @theQuery[type]
-    @_indexQueries
-
-  getIndexedItems: (items) ->
-    indexQueries = @indexQueries()
-    for own key, val of indexQueries
-      if @indexKeys.length > 1
-        items = utils.intersection(items, @indexes[key][val] ? [])
-      else
-        items = @indexes[key][val] ? []
-    items
-
   all: (items, first) ->
     if items then @items = items
     if @indexes
@@ -295,14 +298,6 @@ class QueryBuilder
 
   chain: -> _.chain(@all.apply(this, arguments))
 
-  clone: ->
-    cloned = new QueryBuilder(@items, @_getter)
-    if @indexes
-      cloned._indexQueries = {}
-      cloned.indexes = @indexes
-      cloned.indexKeys = @indexKeys
-    cloned
-
   tester: -> makeTest(@theQuery, @_getter)
 
   first: (items) ->
@@ -311,15 +306,6 @@ class QueryBuilder
   getter: (@_getter) ->
     this
 
-  index: (name, fn) ->
-    throw new Error("Index should only be called after items have been added.") unless @items
-    fn ?= name
-    @indexes ?= {}
-    @indexKeys ?= []
-    @_indexQueries ?= {}
-    @indexKeys.push(name) unless name in @indexKeys
-    @indexes[name] = utils.groupBy(@items, fn)
-    this
 
 addToQuery = (type) ->
   (params, qVal) ->
@@ -361,11 +347,12 @@ runQuery.tester = runQuery.testWith = makeTest
 runQuery.getter = runQuery.pluckWith = utils.makeGetter
 
 expose = (_, mixin = true) ->
+  unless _
+    _ = underscoreReplacement()
+    mixin = false
   createUtils(_)
   if mixin then _.mixin {query:runQuery, q:runQuery}
   runQuery
-
-
 
 # We now need to determine the environment that we are in
 

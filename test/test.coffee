@@ -2,8 +2,7 @@
 require "coffee-script"
 assert = require('assert')
 _ = require "underscore"
-require("../lib/underscore-query")(_)
-#require("../src/underscore-query")(_)
+require("../src/underscore-query")(_)
 
 collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
@@ -544,21 +543,6 @@ describe "Underscore Query Tests", ->
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
-  it "can have indexes", ->
-    a = create()
-    query = _.query(a)
-      .index("title")
-
-    assert.ok(query.indexes.title)
-    assert.equal(query.indexes.title["Home"].length, 1)
-
-    query.and("title", "Home")
-
-    result = query.run()
-
-    assert.equal _.keys(query.theQuery).length, 0
-    assert.equal result.length, 1
-    assert.equal result[0].title, "Home"
 
 
   it "works with dot notation", ->
