@@ -603,6 +603,27 @@ describe "Underscore Query Tests", ->
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
+    result = _.query a, likes: {  $gte: 2, $lt: 20  }
+    assert.equal result.length, 2
+    assert.equal result[0].title, "Home"
+    assert.equal result[1].title, "About"
+
+    result = _.query a, likes: {  $gt: 2, $lte: 20  }
+    assert.equal result.length, 2
+    assert.equal result[0].title, "Home"
+    assert.equal result[1].title, "Contact"
+
+    result = _.query a, likes: {  $gte: 2, $lte: 20  }
+    assert.equal result.length, 3
+    assert.equal result[0].title, "Home"
+    assert.equal result[1].title, "About"
+    assert.equal result[2].title, "Contact"
+
+    result = _.query a, likes: {  $gte: 2, $lte: 20, $ne: 12  }
+    assert.equal result.length, 2
+    assert.equal result[0].title, "About"
+    assert.equal result[1].title, "Contact"
+
   it "Handles nested multiple inequalities", ->
     a = create()
     result = _.query a, $and: [likes: {  $gt: 2, $lt: 20  }]

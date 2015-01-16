@@ -192,6 +192,20 @@ _.query( MyCollection, { likes: {$gte:10} });
 // Returns all models which have a "likes" attribute of greater than or equal to 10
 ```
 
+These may further be combined:
+
+```
+_.query( MyCollection, { likes: {$gt:2, $lt:20} });
+// Returns all models which have a "likes" attribute of greater than 2 or less than 20
+// This example is also equivalent to $between: [2,20]
+_.query( MyCollection, { likes: {$gte:2, $lte:20} });
+// Returns all models which have a "likes" attribute of greater than or equal to 2, and less than or equal to 20
+_.query( MyCollection, { likes: {$gte:2, $lte: 20, $ne: 12} });
+// Returns all models which have a "likes" attribute between 2 and 20 inclusive, but not equal to 12
+```
+
+
+
 ### $between
 To check if a value is in-between 2 query values use the $between operator and supply an array with the min and max value
 
