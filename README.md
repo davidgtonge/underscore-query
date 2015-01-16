@@ -194,7 +194,7 @@ _.query( MyCollection, { likes: {$gte:10} });
 
 These may further be combined:
 
-```
+```js
 _.query( MyCollection, { likes: {$gt:2, $lt:20} });
 // Returns all models which have a "likes" attribute of greater than 2 or less than 20
 // This example is also equivalent to $between: [2,20]
