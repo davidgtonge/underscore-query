@@ -45,8 +45,8 @@ underscoreReplacement = ->
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
-  for key in ["every", "some", "filter", "detect", "reject", "reduce","intersection", "isEqual",
-              "keys", "isArray", "result", "map"]
+  for key in ["every", "some", "filter", "detect", "reject", "reduce","intersection",
+              "isEqual", "keys", "isArray", "result", "map"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
@@ -86,6 +86,8 @@ parseParamType = (query) ->
   key = utils.keys(query)[0]
   queryParam = query[key]
   o = {key}
+  o.boost = queryParam.$boost
+  delete queryParam.$boost
 
   # If the key uses dot notation, then create a getter function
   if key.indexOf(".") isnt -1
@@ -211,19 +213,32 @@ performQuery = (type, value, attr, model, getter) ->
 # This function should accept an obj like this:
 # $and: [queries], $or: [queries]
 # should return false if fails
-single = (queries, getter) ->
+single = (queries, getter, isScore) ->
   if utils.getType(getter) is "String"
     method = getter
     getter = (obj, key) -> obj[method](key)
-  (model) ->
-    for queryObj in queries
-      # Early false return if any of the queries fail
-      return false unless performQuerySingle(queryObj.type, queryObj.parsedQuery, getter, model)
-    # All queries passes, so return true
-    true
+  if isScore
+    throw new Error("score operations currently don't work on compound queries") unless queries.length is 1
+    queryObj = queries[0]
+    throw new Error("score operations only work on $and queries (not #{queryObj.type}") unless queryObj.type is "$and"
+    (model) ->
+      model._score = performQuerySingle(queryObj.type, queryObj.parsedQuery, getter, model, true)
+      model
+  else
+    (model) ->
+      for queryObj in queries
+        # Early false return if any of the queries fail
+        return false unless performQuerySingle(queryObj.type, queryObj.parsedQuery, getter, model, isScore)
+      # All queries passes, so return true
+      true
 
-performQuerySingle = (type, query, getter, model) ->
+
+
+performQuerySingle = (type, query, getter, model, isScore) ->
   passes = 0
+  score = 0
+  scoreInc = 1 / query.length
+
   for q in query
     if q.getter
       attr = q.getter model, q.key
@@ -235,11 +250,16 @@ performQuerySingle = (type, query, getter, model) ->
     test = testModelAttribute(q.type, attr)
     # If the attribute test is true, perform the query
     if test then test = performQuery q.type, q.value, attr, model, getter
-    if test then passes++
+    if test
+      passes++
+      if isScore
+        boost = q.boost ? 1
+        score += (scoreInc * boost)
     switch type
       when "$and"
         # Early false return for $and queries when any test fails
-        return false unless test
+        unless isScore
+          return false unless test
       when "$not"
         # Early false return for $not queries when any test passes
         return false if test
@@ -252,8 +272,10 @@ performQuerySingle = (type, query, getter, model) ->
       else
         throw new Error("Invalid compound method")
 
+  if isScore
+    score
   # For not queries, check that all tests have failed
-  if type is "$not"
+  else if type is "$not"
     passes is 0
   # $or queries have failed as no tests have passed
   # $and queries have passed as no tests failed
@@ -340,19 +362,27 @@ makeTest = (query, getter) -> single(parseQuery(query), parseGetter(getter))
 findOne = (items, query, getter) -> runQuery(items, query, getter, true)
 
 # The main function to be mxied into underscore that takes a collection and a raw query
-runQuery = (items, query, getter, first) ->
+runQuery = (items, query, getter, first, isScore) ->
   if arguments.length < 2
     # If no arguments or only the items are provided, then use the buildQuery interface
     return buildQuery.apply this, arguments
   if getter then getter = parseGetter(getter)
-  query = single(parseQuery(query), getter) unless (utils.getType(query) is "Function")
-  fn = if first then utils.detect else utils.filter
+  query = single(parseQuery(query), getter, isScore) unless (utils.getType(query) is "Function")
+  if isScore
+    fn = utils.map
+  else if first
+    fn = utils.detect
+  else
+    fn = utils.filter
   fn items, query
 
+score = (items, query, getter) ->
+  runQuery(items, query, getter, false, true)
 
 runQuery.build = buildQuery
 runQuery.parse = parseQuery
 runQuery.findOne = runQuery.first = findOne
+runQuery.score = score
 runQuery.tester = runQuery.testWith = makeTest
 runQuery.getter = runQuery.pluckWith = utils.makeGetter
 

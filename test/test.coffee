@@ -608,3 +608,68 @@ describe "Underscore Query Tests", ->
     result = _.query a, $and: [likes: {  $gt: 2, $lt: 20  }]
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
+
+  it "has a score method", ->
+    collection = [
+      { name:'dress',  color:'red',   price:100 }
+      { name:'shoes',  color:'black', price:120 }
+      { name:'jacket', color:'blue',  price:150 }
+    ]
+
+    results = _.query.score( collection, { price: {$lt:140}, color: {$in:['red', 'blue'] }})
+
+    assert.equal _.findWhere(results, {name:'dress'})._score, 1
+    assert.equal _.findWhere(results, {name:'shoes'})._score, 0.5
+
+  it "has a score method with a $boost operator", ->
+    collection = [
+      { name:'dress',  color:'red',   price:100 }
+      { name:'shoes',  color:'black', price:120 }
+      { name:'jacket', color:'blue',  price:150 }
+    ]
+
+    results = _.query.score( collection, { price: 100, color: {$in:['black'], $boost:3 }})
+
+    assert.equal _.findWhere(results, {name:'dress'})._score, 0.5
+    assert.equal _.findWhere(results, {name:'shoes'})._score, 1.5
+
+  it "has a score method with a $boost operator - 2", ->
+    collection = [
+      { name:'dress',  color:'red',   price:100 }
+      { name:'shoes',  color:'black', price:120 }
+      { name:'jacket', color:'blue',  price:150 }
+    ]
+
+    results = _.query.score( collection, { name: {$like:'dre', $boost:5}, color: {$in:['black'], $boost:2 }})
+
+    assert.equal _.findWhere(results, {name:'dress'})._score, 2.5
+    assert.equal _.findWhere(results, {name:'shoes'})._score, 1
+
+  it "score method throws if compound query", ->
+    collection = [
+      { name:'dress',  color:'red',   price:100 }
+      { name:'shoes',  color:'black', price:120 }
+      { name:'jacket', color:'blue',  price:150 }
+    ]
+
+    assert.throws ->
+      _.query.score collection,
+        $and: price: 100
+        $or: [
+          {color: 'red'}
+          {color: 'blue'}
+        ]
+
+  it "score method throws if non $and query", ->
+    collection = [
+      { name:'dress',  color:'red',   price:100 }
+      { name:'shoes',  color:'black', price:120 }
+      { name:'jacket', color:'blue',  price:150 }
+    ]
+
+    assert.throws ->
+      _.query.score collection,
+        $or: [
+          {color: 'red'}
+          {color: 'blue'}
+        ]
