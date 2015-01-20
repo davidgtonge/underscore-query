@@ -86,8 +86,9 @@ parseParamType = (query) ->
   key = utils.keys(query)[0]
   queryParam = query[key]
   o = {key}
-  o.boost = queryParam.$boost
-  delete queryParam.$boost
+  if queryParam?.$boost
+    o.boost = queryParam.$boost
+    delete queryParam.$boost
 
   # If the key uses dot notation, then create a getter function
   if key.indexOf(".") isnt -1
