@@ -256,26 +256,26 @@ describe "Underscore Query Tests", ->
     result = _.query a, {$not: {likes:  {$lt: 12}}}
     assert.equal result.length, 2
 
-  #  These tests fail, but would pass if it $not worked parallel to MongoDB
-  #  it "$not operator", ->
-  #    a = create()
-  #    result = _.query a, {likes:  {$not: {$lt: 12}}}
-  #    assert.equal result.length, 2
-  #
-  #  it "$not operator", ->
-  #    a = create()
-  #    result = _.query a, likes: {$not:  12}
-  #    assert.equal result.length, 2
-  #
-  #  it "$not $equal operator", ->
-  #    a = create()
-  #    result = _.query a, likes: {$not:  {$equal: 12}}
-  #    assert.equal result.length, 2
+  #These tests fail, but would pass if it $not worked parallel to MongoDB
+  it "$not operator", ->
+    a = create()
+    result = _.query a, {likes:  {$not: {$lt: 12}}}
+    assert.equal result.length, 2
 
-  #  it "$not $equal operator", ->
-  #    a = create()
-  #    result = _.query a, likes: {$not:  {ne: 12}}
-  #    assert.equal result.length, 1
+  it "$not operator", ->
+    a = create()
+    result = _.query a, likes: {$not:  12}
+    assert.equal result.length, 2
+
+  it "$not $equal operator", ->
+    a = create()
+    result = _.query a, likes: {$not:  {$equal: 12}}
+    assert.equal result.length, 2
+
+  it "$not $equal operator", ->
+    a = create()
+    result = _.query a, likes: {$not:  {$ne: 12}}
+    assert.equal result.length, 1
 
 
 
