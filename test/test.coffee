@@ -251,6 +251,32 @@ describe "Underscore Query Tests", ->
     assert.equal result[0].title, "About"
 
 
+  it "$not operator", ->
+    a = create()
+    result = _.query a, {$not: {likes:  {$lt: 12}}}
+    assert.equal result.length, 2
+
+  #  These tests fail, but would pass if it $not worked parallel to MongoDB
+  #  it "$not operator", ->
+  #    a = create()
+  #    result = _.query a, {likes:  {$not: {$lt: 12}}}
+  #    assert.equal result.length, 2
+  #
+  #  it "$not operator", ->
+  #    a = create()
+  #    result = _.query a, likes: {$not:  12}
+  #    assert.equal result.length, 2
+  #
+  #  it "$not $equal operator", ->
+  #    a = create()
+  #    result = _.query a, likes: {$not:  {$equal: 12}}
+  #    assert.equal result.length, 2
+
+  #  it "$not $equal operator", ->
+  #    a = create()
+  #    result = _.query a, likes: {$not:  {ne: 12}}
+  #    assert.equal result.length, 1
+
 
 
   it "$elemMatch", ->
@@ -706,3 +732,35 @@ describe "Underscore Query Tests", ->
     a = create()
     result = _.query a, {likes:  {$not: {$lt: 12}}}
     assert.equal result.length, 2
+
+  # This is parallel to MongoDB
+  it "$not operator - mongo style", ->
+    a = create()
+    result = _.query a, {likes:  {$not: 12}}
+    assert.equal result.length, 2
+
+  it "combination of $gt and $lt - mongo style", ->
+    a = create()
+    result = _.query a, {likes: { $gt: 2, $lt: 20}}
+    assert.equal result.length, 1
+
+  it "$not combination of $gt and $lt  - mongo style", ->
+    a = create()
+    result = _.query a, {likes: {$not: { $gt: 2, $lt: 20}}}
+    assert.equal result.length, 2
+
+  it "$nor combination of $gt and $lt  - expressions ", ->
+    a = create()
+    result = _.query a, {$nor: [{likes: { $gt: 2}}, {likes: { $lt: 20}}]}
+    assert.equal result.length, 0
+
+#  This query is not a valid MongoDB query, but if it were one would expect it to yield an empty set
+#  it "$nor combination of $gt and $lt  - values", ->
+#    a = create()
+#    result = _.query a, {likes: {$nor: [{ $gt: 2}, {$lt: 20}]}}
+#    assert.equal result.length, 0
+
+  it "combination of $gt  and $not", ->
+    a = create()
+    result = _.query a, {likes: { $not: 2, $lt: 20}}
+    assert.equal result.length, 1
