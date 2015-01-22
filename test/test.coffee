@@ -694,3 +694,15 @@ describe "Underscore Query Tests", ->
           {color: 'red'}
           {color: 'blue'}
         ]
+
+  # not parallel to MongoDB
+  it "$not operator", ->
+    a = create()
+    result = _.query a, {$not: {likes:  {$lt: 12}}}
+    assert.equal result.length, 2
+
+  # This is parallel to MongoDB
+  it "$not operator - mongo style", ->
+    a = create()
+    result = _.query a, {likes:  {$not: {$lt: 12}}}
+    assert.equal result.length, 2

@@ -124,12 +124,15 @@ parseParamType = (query) ->
               when "$elemMatch" then o.value = single(parseQuery(value))
               when "$endsWith" then o.value = utils.reverseString(value)
               when "$likeI", "$startsWith" then o.value = value.toLowerCase()
+              when "$not", "$nor", "$or", "$and"
+                o.value = parseSubQuery utils.makeObj(o.key, value)
+                o.key = null
               when "$computed"
                 o = parseParamType(utils.makeObj(key, value))
                 o.getter = utils.makeGetter(key)
               else o.value = value
           else throw new Error("Query value (#{value}) doesn't match query type: (#{type})")
-  # If the query_param is not an object or a regexp then revert to the default operator: $equal
+    # If the query_param is not an object or a regexp then revert to the default operator: $equal
     else
       o.type = "$equal"
       o.value = queryParam
