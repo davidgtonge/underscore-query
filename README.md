@@ -60,7 +60,7 @@ require("underscore-query")(_);
 
 // With Lodash
 _ = require("lodash");
-require("underscore-query(_);
+require("underscore-query")(_);
 
 // If you don't want the query methods 'mixed in'
 _ = require("underscore");
