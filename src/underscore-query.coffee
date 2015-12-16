@@ -255,10 +255,10 @@ performQuerySingle = (type, query, getter, model, isScore) ->
   scoreInc = 1 / query.length
 
   for q in query
-    if q.getter
-      attr = q.getter model, q.key
-    else if getter
+    if getter
       attr = getter model, q.key
+    else if q.getter
+        attr = q.getter model, q.key
     else
       attr = model[q.key]
     # Check if the attribute value is the right type (some operators need a string, or an array)
