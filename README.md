@@ -87,16 +87,16 @@ _.query( MyCollection, {tags: { $any: ["coffeescript", "backbone", "mvc"]}});
 
 _.query(MyCollection, {
   // Models must match all these queries
-  $and:{
-    title: {$like: "news"}, // Title attribute contains the string "news"
-    likes: {$gt: 10}
-  }, // Likes attribute is greater than 10
+  $and: [
+    {title: {$like: "news"}}, // Title attribute contains the string "news"
+    {likes: {$gt: 10}}
+  ], // Likes attribute is greater than 10
 
   // Models must match one of these queries
-  $or:{
-    featured: true, // Featured attribute is true
-    category:{$in:["code","programming","javascript"]}
-  } 
+  $or: [
+    {featured: true}, // Featured attribute is true
+    {category:{$in:["code","programming","javascript"]}}
+  ]
   //Category attribute is either "code", "programming", or "javascript"
 });
 
@@ -127,11 +127,13 @@ Or if CoffeeScript is your thing (the source is written in CoffeeScript), try th
 
 ```coffeescript
 _.query MyCollection,
-  $and:
+  $and: [
     likes: $lt: 15
-  $or:
-    content: $like: "news"
-    featured: $exists: true
+  ]
+  $or: [
+    {content: $like: "news"}
+    {featured: $exists: true}
+  ]
   $not:
     colors: $contains: "yellow"
 ```
@@ -354,9 +356,9 @@ Posts.query({
       $not: {
         text: /really/i
       },
-      $and: {
+      $and: [{
         text: /totally/i
-      }
+      }]
     }
   }
 });
@@ -408,7 +410,7 @@ to specify either `$or`, `$nor`, `$not` to implement alternate logic.
 ### $and
 
 ```js
-_.query( MyCollection, { $and: { title: {$like: "News"}, likes: {$gt: 10}}});
+_.query( MyCollection, { $and: [{ title: {$like: "News"} }, { likes: {$gt: 10}} ]});
 // Returns all models that contain "News" in the title and have more than 10 likes.
 _.query( MyCollection, { title: {$like: "News"}, likes: {$gt: 10} });
 // Same as above as $and is assumed if not supplied
@@ -417,7 +419,7 @@ _.query( MyCollection, { title: {$like: "News"}, likes: {$gt: 10} });
 ### $or
 
 ```js
-_.query( MyCollection, { $or: { title: {$like: "News"}, likes: {$gt: 10}}});
+_.query( MyCollection, { $or: [{ title: {$like: "News"}}, { likes: {$gt: 10}}]});
 // Returns all models that contain "News" in the title OR have more than 10 likes.
 ```
 
@@ -425,7 +427,7 @@ _.query( MyCollection, { $or: { title: {$like: "News"}, likes: {$gt: 10}}});
 The opposite of `$or`
 
 ```js
-_.query( MyCollection, { $nor: { title: {$like: "News"}, likes: {$gt: 10}}});
+_.query( MyCollection, { $nor: [{ title: {$like: "News"}}, { likes: {$gt: 10}}]});
 // Returns all models that don't contain "News" in the title NOR have more than 10 likes.
 ```
 
@@ -457,8 +459,8 @@ and either a category of "abc" or a tag of "xyz"
 
 ```js
 _.query( MyCollection, {
-    $and: { title: {$like: "News"}},
-    $or: {likes: {$gt: 10}, color:{$contains:"red"}}
+    $and: [{ title: {$like: "News"}]},
+    $or: [{ likes: {$gt: 10}}, { color:{$contains:"red"}]}
 });
 //Returns models that have "News" in their title and
 //either have more than 10 likes or contain the color red.
