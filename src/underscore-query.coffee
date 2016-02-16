@@ -109,7 +109,7 @@ parseParamType = (query) ->
       # If the key is one of the compound keys, then parse the param as a raw query
         if key in utils.compoundKeys
           o.type = key
-          o.value = parseSubQuery queryParam
+          o.value = parseSubQuery queryParam, key
           o.key = null
 
         # Multiple conditions for the same key
@@ -152,7 +152,7 @@ parseParamType = (query) ->
 
 
 # This function parses and normalizes raw queries.
-parseSubQuery = (rawQuery) ->
+parseSubQuery = (rawQuery, type) ->
 
   # Ensure that the query is an array
   if utils.isArray(rawQuery)
@@ -160,8 +160,16 @@ parseSubQuery = (rawQuery) ->
   else
     queryArray = (utils.makeObj(key, val) for own key, val of rawQuery)
 
+  iteratee = (memo, query) ->
+    parsed = parseParamType(query)
+    if (type == "$or" && parsed.length >= 2) # support $or with 2 or more conditions
+      memo.push {type:"$and", parsedQuery: parsed}
+      return memo
+    else
+      memo.concat parsed
+
   # Loop through all the different queries
-  utils.reduce(queryArray, ((memo, query) -> memo.concat parseParamType(query)), [])
+  utils.reduce(queryArray, iteratee, [])
 
 # Tests query value, to ensure that it is of the correct type
 testQueryValue = (queryType, value) ->
@@ -215,9 +223,7 @@ performQuery = (type, value, attr, model, getter) ->
     when "$cb"              then value.call model, attr
     when "$mod"             then (attr % value[0]) is value[1]
     when "$elemMatch"       then (runQuery(attr,value, null, true))
-    when "$and", "$or", "$nor"
-      performQuerySingle(type, value, getter, model)
-    when "$not"
+    when "$and", "$or", "$nor", "$not"
       performQuerySingle(type, value, getter, model)
     else false
 
@@ -243,8 +249,6 @@ single = (queries, getter, isScore) ->
       # All queries passes, so return true
       true
 
-
-
 performQuerySingle = (type, query, getter, model, isScore) ->
   passes = 0
   score = 0
@@ -260,7 +264,10 @@ performQuerySingle = (type, query, getter, model, isScore) ->
     # Check if the attribute value is the right type (some operators need a string, or an array)
     test = testModelAttribute(q.type, attr)
     # If the attribute test is true, perform the query
-    if test then test = performQuery q.type, q.value, attr, model, getter
+    if test
+      if q.parsedQuery #nested queries
+        test = single([q], getter, isScore)(model)
+      else test = performQuery q.type, q.value, attr, model, getter
     if test
       passes++
       if isScore
@@ -319,8 +326,8 @@ parseQuery = (query) ->
       for own key, val of query when key not in utils.compoundKeys
         query.$and[key] = val
         delete query[key]
-    return (for type in compoundQuery
-      {type, parsedQuery:parseSubQuery(query[type])})
+    (for type in compoundQuery
+      {type, parsedQuery:parseSubQuery(query[type], type)})
 
 
 parseGetter = (getter) ->

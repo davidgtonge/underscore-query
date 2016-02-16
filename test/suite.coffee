@@ -223,7 +223,21 @@ module.exports = (_query) ->
     result = _query a, $or: [{likes: {$gt: 5}}, {featured: true}]
     assert.equal result.length, 3
 
-  # it "$or with multiple params in a condition", ->
+  it "$or with multiple params in a condition", ->
+    dataset = [{x: 1, y: 2}, {x: 1.25, y: 3}, {x: 1.5, y: 3}, {x: 2, y: 4}]
+    result = _query(dataset, {
+      $or: [{
+        x: {
+          $gt: 1
+        },
+        y: {
+          $lt: 4
+        }
+      }, {
+        foo: 1
+      }]
+    })
+    assert.equal result.length, 2
 
   it "$nor operator", ->
     a = create()
