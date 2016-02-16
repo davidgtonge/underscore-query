@@ -35,6 +35,8 @@ underscoreReplacement = ->
   out.reject = (array, fn) ->
     (item for item in array when not fn(item))
 
+  out.first = (array) -> array[0]
+
   out.intersection = (array1, array2) ->
     (item for item in array1 when array2.indexOf(item) isnt -1)
 
@@ -45,8 +47,8 @@ underscoreReplacement = ->
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
-  for key in ["every", "some", "filter", "detect", "reject", "reduce","intersection",
-              "isEqual", "keys", "isArray", "result", "map"]
+  for key in ["every", "some", "filter", "first", "detect", "reject", "reduce",
+      "intersection", "isEqual", "keys", "isArray", "result", "map"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
@@ -69,6 +71,8 @@ utils.reverseString = (str) -> str.toLowerCase().split("").reverse().join("")
 # An array of the compound modifers that can be used in queries
 utils.compoundKeys = ["$and", "$not", "$or", "$nor"]
 
+utils.expectedArrayQueries = ["$and", "$or", "$nor"]
+
 # Returns a getter function that works with dot notation and named functions
 utils.makeGetter = (keys) ->
   keys = keys.split(".")
@@ -83,66 +87,68 @@ multipleConditions = (key, queries) ->
     utils.makeObj key, utils.makeObj(type, val))
 
 parseParamType = (query) ->
-  key = utils.keys(query)[0]
-  queryParam = query[key]
-  o = {key}
-  if queryParam?.$boost
-    o.boost = queryParam.$boost
-    delete queryParam.$boost
+  result = []
+  for own key, queryParam of query
+    o = {key}
+    if queryParam?.$boost
+      o.boost = queryParam.$boost
+      delete queryParam.$boost
 
-  # If the key uses dot notation, then create a getter function
-  if key.indexOf(".") isnt -1
-    o.getter = utils.makeGetter(key)
+    # If the key uses dot notation, then create a getter function
+    if key.indexOf(".") isnt -1
+      o.getter = utils.makeGetter(key)
 
-  paramType = utils.getType(queryParam)
-  switch paramType
-  # Test for Regexs and Dates as they can be supplied without an operator
-    when "RegExp", "Date"
-      o.type = "$#{paramType.toLowerCase()}"
-      o.value = queryParam
+    paramType = utils.getType(queryParam)
+    switch paramType
+    # Test for Regexs and Dates as they can be supplied without an operator
+      when "RegExp", "Date"
+        o.type = "$#{paramType.toLowerCase()}"
+        o.value = queryParam
 
-    when "Object"
-    # If the key is one of the compound keys, then parse the param as a raw query
-      if key in utils.compoundKeys
-        o.type = key
-        o.value = parseSubQuery queryParam
-        o.key = null
+      when "Object"
+      # If the key is one of the compound keys, then parse the param as a raw query
+        if key in utils.compoundKeys
+          o.type = key
+          o.value = parseSubQuery queryParam
+          o.key = null
 
-      # Multiple conditions for the same key
-      else if utils.keys(queryParam).length > 1
-        o.type = "$and"
-        o.value = parseSubQuery multipleConditions(key, queryParam)
-        o.key = null
+        # Multiple conditions for the same key
+        else if utils.keys(queryParam).length > 1
+          o.type = "$and"
+          o.value = parseSubQuery multipleConditions(key, queryParam)
+          o.key = null
 
-      # Otherwise extract the key and value
+        # Otherwise extract the key and value
+        else
+          for own type, value of queryParam
+            # Before adding the query, its value is checked to make sure it is the right type
+            if testQueryValue type, value
+              o.type = type
+              switch type
+                when "$elemMatch" then o.value = single(parseQuery(value))
+                when "$endsWith" then o.value = utils.reverseString(value)
+                when "$likeI", "$startsWith" then o.value = value.toLowerCase()
+                when "$not", "$nor", "$or", "$and"
+                  o.value = parseSubQuery utils.makeObj(o.key, value)
+                  o.key = null
+                when "$computed"
+                  o = utils.first parseParamType(utils.makeObj(key, value))
+                  o.getter = utils.makeGetter(key)
+                else o.value = value
+            else throw new Error("Query value (#{value}) doesn't match query type: (#{type})")
+      # If the query_param is not an object or a regexp then revert to the default operator: $equal
       else
-        for own type, value of queryParam
-          # Before adding the query, its value is checked to make sure it is the right type
-          if testQueryValue type, value
-            o.type = type
-            switch type
-              when "$elemMatch" then o.value = single(parseQuery(value))
-              when "$endsWith" then o.value = utils.reverseString(value)
-              when "$likeI", "$startsWith" then o.value = value.toLowerCase()
-              when "$not", "$nor", "$or", "$and"
-                o.value = parseSubQuery utils.makeObj(o.key, value)
-                o.key = null
-              when "$computed"
-                o = parseParamType(utils.makeObj(key, value))
-                o.getter = utils.makeGetter(key)
-              else o.value = value
-          else throw new Error("Query value (#{value}) doesn't match query type: (#{type})")
-    # If the query_param is not an object or a regexp then revert to the default operator: $equal
-    else
-      o.type = "$equal"
-      o.value = queryParam
+        o.type = "$equal"
+        o.value = queryParam
 
-  # For "$equal" queries with arrays or objects we need to perform a deep equal
-  if (o.type is "$equal") and (paramType in ["Object","Array"])
-    o.type = "$deepEqual"
+    # For "$equal" queries with arrays or objects we need to perform a deep equal
+    if (o.type is "$equal") and (paramType in ["Object","Array"])
+      o.type = "$deepEqual"
+
+    result.push(o)
 
   # Return the query object
-  return o
+  return result
 
 
 # This function parses and normalizes raw queries.
@@ -155,8 +161,7 @@ parseSubQuery = (rawQuery) ->
     queryArray = (utils.makeObj(key, val) for own key, val of rawQuery)
 
   # Loop through all the different queries
-  (parseParamType(query) for query in queryArray)
-
+  utils.reduce(queryArray, ((memo, query) -> memo.concat parseParamType(query)), [])
 
 # Tests query value, to ensure that it is of the correct type
 testQueryValue = (queryType, value) ->
@@ -210,7 +215,9 @@ performQuery = (type, value, attr, model, getter) ->
     when "$cb"              then value.call model, attr
     when "$mod"             then (attr % value[0]) is value[1]
     when "$elemMatch"       then (runQuery(attr,value, null, true))
-    when "$and", "$or", "$nor", "$not"
+    when "$and", "$or", "$nor"
+      performQuerySingle(type, value, getter, model)
+    when "$not"
       performQuerySingle(type, value, getter, model)
     else false
 
@@ -294,6 +301,10 @@ parseQuery = (query) ->
   queryKeys = utils.keys(query)
   return [] unless queryKeys.length
   compoundQuery = utils.intersection utils.compoundKeys, queryKeys
+
+  for type in compoundQuery
+    if type in utils.expectedArrayQueries and !utils.isArray(query[type])
+      throw new Error(type + ' query must be an array')
 
   # If no compound methods are found then use the "and" iterator
   if compoundQuery.length is 0
