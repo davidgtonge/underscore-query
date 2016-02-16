@@ -27,7 +27,7 @@ underscoreReplacement = ->
   out.result = (obj = {}, key) ->
     if (utils.getType(obj[key]) is "Function") then obj[key]() else obj[key]
 
-  out.detect = (array, fn) ->
+  out.find = (array, fn) ->
     for item in array when fn(item)
       return item
     return
@@ -47,7 +47,7 @@ underscoreReplacement = ->
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
-  for key in ["every", "some", "filter", "first", "detect", "reject", "reduce",
+  for key in ["every", "some", "filter", "first", "find", "reject", "reduce",
       "intersection", "isEqual", "keys", "isArray", "result", "map"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
@@ -310,7 +310,7 @@ parseQuery = (query) ->
   if compoundQuery.length is 0
     return [{type:"$and", parsedQuery:parseSubQuery(query)}]
   else
-    # Detect if there is an implicit $and compundQuery operator
+    # find if there is an implicit $and compundQuery operator
     if compoundQuery.length isnt queryKeys.length
       # Add the and compund query operator (with a sanity check that it doesn't exist)
       if "$and" not in compoundQuery
@@ -386,7 +386,7 @@ runQuery = (items, query, getter, first, isScore) ->
   if isScore
     fn = utils.map
   else if first
-    fn = utils.detect
+    fn = utils.find
   else
     fn = utils.filter
   fn items, query

@@ -19,7 +19,7 @@
         "url": "https://github.com/davidgtonge/underscore-query.git"
     },
     "dependencies": {
-        "underscore": ">=1.1.x"
+        "underscore": ">=1.6.x"
     },
     "devDependencies": {
         "coffee-script": ">=1.7.x",
