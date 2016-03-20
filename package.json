@@ -27,7 +27,7 @@
         "backbone":"",
         "uglify-js": "",
         "handlebars": "",
-        "lodash":""
+        "lodash":"3.x"
     },
     "scripts": {
         "test": "mocha"
