@@ -75,14 +75,21 @@ utils.compoundKeys = ["$and", "$not", "$or", "$nor"]
 
 utils.expectedArrayQueries = ["$and", "$or", "$nor"]
 
+lookup = (keys, obj) ->
+  out = obj
+  for key, idx in keys
+    # Add support for #21
+    if utils.isArray(out)
+      remainingKeys = keys.slice(idx)
+      out = utils.map(out, (v) -> lookup(remainingKeys, v))
+    else if out then out = utils.result(out,key)
+    else break
+  out
+
 # Returns a getter function that works with dot notation and named functions
 utils.makeGetter = (keys) ->
   keys = keys.split(".")
-  (obj) ->
-    out = obj
-    for key in keys
-      if out then out = utils.result(out,key)
-    out
+  (obj) -> lookup(keys, obj)
 
 multipleConditions = (key, queries) ->
   (for type, val of queries

@@ -891,3 +891,23 @@ module.exports = (_query) ->
     a = create()
     result = _query a, {likes: { $not: 2, $lt: 20}}
     assert.equal result.length, 1
+
+  it "equal within an array (#21)", ->
+    tweets = [{
+      "entities": {
+        "user_mentions": [{
+          "id_str": "10228271"
+        }]
+      }
+    }, {
+      "entities": {
+        "user_mentions": [{
+          "id_str": "10228272"
+        }]
+      }
+    }]
+
+    res = _query tweets, {"entities.user_mentions.id_str": "10228272"}
+    assert.equal(res.length, 1)
+    res = _query tweets, {"entities.user_mentions.id_str": "10228273"}
+    assert.equal(res.length, 0)
