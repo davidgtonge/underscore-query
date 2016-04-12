@@ -153,7 +153,6 @@ parseParamType = (query) ->
 
 # This function parses and normalizes raw queries.
 parseSubQuery = (rawQuery, type) ->
-
   # Ensure that the query is an array
   if utils.isArray(rawQuery)
     queryArray = rawQuery
@@ -202,12 +201,12 @@ performQuery = (type, value, attr, model, getter) ->
     when "$deepEqual"       then utils.isEqual(attr, value)
     when "$contains"        then value in attr
     when "$ne"              then attr isnt value
-    when "$lt"              then attr < value
-    when "$gt"              then attr > value
-    when "$lte"             then attr <= value
-    when "$gte"             then attr >= value
-    when "$between"         then value[0] < attr < value[1]
-    when "$betweene"        then value[0] <= attr <= value[1]
+    when "$lt"              then value? and attr < value
+    when "$gt"              then value? and attr > value
+    when "$lte"             then value? and attr <= value
+    when "$gte"             then value? and attr >= value
+    when "$between"         then value[0]? and value[1]? and value[0] < attr < value[1]
+    when "$betweene"        then value[0]? and value[1]? and value[0] <= attr <= value[1]
     when "$in"              then attr in value
     when "$nin"             then attr not in value
     when "$all"             then utils.every value, (item) -> item in attr

@@ -3,9 +3,9 @@ assert = require "assert"
 _ = require "underscore"
 
 _collection =  [
-  {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript"}
-  {title:"About", colors:["red"], likes:2, featured:true, content: "dummy content about javascript"}
-  {title:"Contact", colors:["red","blue"], likes:20, content: "Dummy content about PHP"}
+  {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript", score: 0}
+  {title:"About", colors:["red"], likes:2, featured:true, content: "dummy content about javascript", score: 5}
+  {title:"Contact", colors:["red","blue"], likes:20, content: "Dummy content about PHP", score: -1}
 ]
 
 create = -> _.clone(_collection)
@@ -26,6 +26,11 @@ module.exports = (_query) ->
   it "Simple equals query (no results)", ->
     a = create()
     result = _query a, title:"Homes"
+    assert.equal result.length, 0
+
+  it "equal null doesn't match 0", ->
+    a = create()
+    result = _query a, score:null
     assert.equal result.length, 0
 
   it "Simple equals query with explicit $equal", ->
@@ -50,10 +55,20 @@ module.exports = (_query) ->
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
 
+  it "$lt operator", ->
+    a = create()
+    result = _query a, score: {$lt: null}
+    assert.equal result.length, 0
+
   it "$lte operator", ->
     a = create()
     result = _query a, likes: {$lte: 12}
     assert.equal result.length, 2
+
+  it "$lte operator", ->
+    a = create()
+    result = _query a, score: {$lte: null}
+    assert.equal result.length, 0
 
   it "$gt operator", ->
     a = create()
@@ -61,16 +76,47 @@ module.exports = (_query) ->
     assert.equal result.length, 1
     assert.equal result[0].title, "Contact"
 
+  it "$gt null", ->
+    a = create()
+    result = _query a, likes: {$gt: null}
+    assert.equal result.length, 0
+
   it "$gte operator", ->
     a = create()
     result = _query a, likes: {$gte: 12}
     assert.equal result.length, 2
+
+  it "$gte null", ->
+    a = create()
+    result = _query a, likes: {$gte: null}
+    assert.equal result.length, 0
 
   it "$between operator", ->
     a = create()
     result = _query a, likes: {$between: [1,5]}
     assert.equal result.length, 1
     assert.equal result[0].title, "About"
+
+  it "$between operator is exclusive", ->
+    a = create()
+    result = _query a, likes: {$between: [1,2]}
+    assert.equal result.length, 0
+
+  it "$between operator with null", ->
+    a = create()
+    result = _query a, likes: {$between: [null, 5]}
+    assert.equal result.length, 0
+
+  it "$betweene operator is inclusive", ->
+    a = create()
+    result = _query a, likes: {$betweene: [1,2]}
+    assert.equal result.length, 1
+    assert.equal result[0].title, "About"
+
+  it "$betweene operator with null", ->
+    a = create()
+    result = _query a, likes: {$betweene: [null, 10]}
+    assert.equal result.length, 0
 
   it "$mod operator", ->
     a = create()
