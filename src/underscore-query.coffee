@@ -195,6 +195,16 @@ testModelAttribute = (queryType, value) ->
 
 # Perform the actual query logic for each query and each model/attribute
 performQuery = (type, value, attr, model, getter) ->
+  # Handle types of queries that should not be dynamic first
+  switch type
+    when "$and", "$or", "$nor", "$not"
+      return performQuerySingle(type, value, getter, model)
+    when "$cb"              then return value.call model, attr
+    when "$elemMatch"       then return (runQuery(attr,value, null, true))
+
+  # If the query attribute is a function and the value isn't, it should be dynamically evaluated.
+  value = value() if typeof value is 'function'
+
   switch type
     when "$equal"
       # If the attribute is an array then search for the query value in the array the same as Mongo
@@ -220,11 +230,7 @@ performQuery = (type, value, attr, model, getter) ->
     when "$endsWith"        then utils.reverseString(attr).indexOf(value) is 0
     when "$type"            then typeof attr is value
     when "$regex", "$regexp" then value.test attr
-    when "$cb"              then value.call model, attr
     when "$mod"             then (attr % value[0]) is value[1]
-    when "$elemMatch"       then (runQuery(attr,value, null, true))
-    when "$and", "$or", "$nor", "$not"
-      performQuerySingle(type, value, getter, model)
     else false
 
 # This function should accept an obj like this:

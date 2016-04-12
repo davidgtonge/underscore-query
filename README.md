@@ -19,6 +19,7 @@ In updating the prokect serveral new features have been added, including the abi
  - Accepts dot notation to query deep properties (e.g. {"stats.views.december": 100}
  - Custom getters can be defined, (e.g. `.get` for Backbone)
  - Works well with underscore chaining
+ - Dynamically evaluates functions on query
 
 Please report any bugs, feature requests in the issue tracker.
 Pull requests are welcome!
@@ -184,9 +185,9 @@ _.query( MyCollection, { title: {$ne:"Test"} });
 These conditional operators can be used for greater than and less than comparisons in queries
 
 ```js
-_.query( MyCollection, { likes: {$lt:10} });
+_.query( MyCollection, { likes: {$lt: () -> 10} });
 // Returns all models which have a "likes" attribute of less than 10
-_.query( MyCollection, { likes: {$lte:10} });
+_.query( MyCollection, { likes: {$lte: () -> 10} });
 // Returns all models which have a "likes" attribute of less than or equal to 10
 _.query( MyCollection, { likes: {$gt:10} });
 // Returns all models which have a "likes" attribute of greater than 10
