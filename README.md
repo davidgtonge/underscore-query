@@ -1,4 +1,4 @@
-underscore-query
+underscore-query (v2.0)
 ===================
 
 [![Build Status](https://secure.travis-ci.org/davidgtonge/underscore-query.png)](http://travis-ci.org/davidgtonge/underscore-query)
@@ -209,12 +209,14 @@ _.query( MyCollection, { likes: {$gte:2, $lte: 20, $ne: 12} });
 
 
 
-### $between
+### $between, $betweene
 To check if a value is in-between 2 query values use the $between operator and supply an array with the min and max value
 
 ```js
+// Returns all models which have a "likes" attribute of greater than 5 and less than 15
 _.query( MyCollection, { likes: {$between:[5,15] } });
-// Returns all models which have a "likes" attribute of greater than 5 and less then 15
+// Returns all models which have a "likes" attribute of greater-equal-to  5 and less-equal-to 15
+_.query( MyCollection, { likes: {$betweene:[5,15] } });
 ```
 
 ### $in
@@ -546,11 +548,11 @@ The index method takes either a single key, or a key and a function.
 
 
 
-
-
 Contributors
 ===========
 
-Dave Tonge - [davidgtonge](http://github.com/davidgtonge)
+Dave Tonge - [davidgtonge](https://github.com/davidgtonge)
+Benjamin Caldwell - [benjamincaldwell](https://github.com/benjamincaldwell)
 Rob W - [Rob W](https://github.com/Rob--W)
 Cezary Wojtkowski - [cezary](https://github.com/cezary)
+Graeme Yeates - [megawac](https://github.com/megawac)
