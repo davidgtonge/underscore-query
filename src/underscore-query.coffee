@@ -14,38 +14,6 @@ root = this
 ### UTILS ###
 utils = {}
 
-
-# ES5 / Coffee Replacement for underscore / lodash utils
-underscoreReplacement = ->
-  out = {}
-  ["every", "some", "filter", "reduce", "map"].forEach (key) ->
-    out[key] = (array, args...) ->
-      array[key].apply(array, args)
-
-  out.keys = Object.keys
-  out.isArray = Array.isArray
-  out.result = (obj = {}, key) ->
-    if (utils.getType(obj[key]) is "Function") then obj[key]() else obj[key]
-
-  out.find = (array, fn) ->
-    for item in array when fn(item)
-      return item
-    return
-
-  out.reject = (array, fn) ->
-    (item for item in array when not fn(item))
-
-  out.first = (array) -> array[0]
-
-  out.intersection = (array1, array2) ->
-    (item for item in array1 when array2.indexOf(item) isnt -1)
-
-  out.isEqual = (a,b) -> JSON.stringify(a) is JSON.stringify(b)
-
-  out.includes = (a, b) -> b in a
-  out
-
-
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
@@ -423,9 +391,6 @@ runQuery.tester = runQuery.testWith = makeTest
 runQuery.getter = runQuery.pluckWith = utils.makeGetter
 
 expose = (_, mixin = true) ->
-  unless _
-    _ = underscoreReplacement()
-    mixin = false
   createUtils(_)
   if mixin then _.mixin {query:runQuery, q:runQuery}
   runQuery
