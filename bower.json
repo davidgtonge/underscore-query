@@ -1,0 +1,17 @@
+{
+  "name": "underscore-query",
+  "homepage": "https://github.com/davidgtonge/underscore-query",
+  "authors": [
+    "Dave Tonge <dave.tonge@momentumft.co.uk>",
+    "Graeme Yeates <megawac@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "build",
+    "Cakefile"
+  ]
+}
