@@ -247,6 +247,23 @@ module.exports = (_query) ->
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
 
+  it "Dynamic equals query", ->
+    a = create()
+    result = _query a, title:()->"Homes"
+    assert.equal result.length, 0
+    result = _query a, title:()->"Home"
+    assert.equal result.length, 1
+
+  it "ensure dynamic query not cached", ->
+    a = create()
+    count = 12 - a.length
+    query = _query.testWith(likes: $lt: -> count += 1)
+
+    result = _.filter(a, query)
+    assert.equal (result).length, 1
+    result = _.filter(a, query)
+    assert.equal (result).length, 2
+
   it "$and operator", ->
     a = create()
     result = _query a, likes: {$gt: 5}, colors: {$contains: "yellow"}
