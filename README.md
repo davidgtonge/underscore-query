@@ -16,10 +16,10 @@ In updating the prokect serveral new features have been added, including the abi
  - Use a complex query object, or build queries up with a chainable api
  - Full support for compound queries ($not, $nor, $or, $and), including nested compound queries.
  - Full support for querying nested arrays (see `$elemMatch`)
- - Accepts dot notation to query deep properties (e.g. {"stats.views.december": 100}
+ - Accepts dot notation to query deep properties (e.g. `{"stats.views.december": 100}`)
  - Custom getters can be defined, (e.g. `.get` for Backbone)
  - Works well with underscore chaining
- - Dynamically evaluates functions on query
+ - Dynamically evaluates functions on query (e.g. `{"startTime": {$gt: () => new Date}}` will ensure `startTime` property is greater than now)
 
 Please report any bugs, feature requests in the issue tracker.
 Pull requests are welcome!
