@@ -107,6 +107,13 @@ module.exports = (_query) ->
     result = _query a, likes: {$between: [null, 5]}
     assert.equal result.length, 0
 
+  it "$between errors with not enough args", ->
+    a = create()
+    assert.throws ->
+      result = _query a, likes: {$between: []}
+    assert.throws ->
+      result = _query a, likes: {$between: [5]}
+
   it "$betweene operator is inclusive", ->
     a = create()
     result = _query a, likes: {$betweene: [1,2]}
@@ -123,6 +130,21 @@ module.exports = (_query) ->
     result = _query a, likes: {$mod: [3,0]}
     assert.equal result.length, 1
     assert.equal result[0].title, "Home"
+
+
+  it "$mod operator with null", ->
+    a = create()
+    result = _query a, likes: {$mod: [null, 5]}
+    assert.equal result.length, 0
+    result = _query a, likes: {$mod: [3, null]}
+    assert.equal result.length, 0
+
+  it "$mod errors with not enough args", ->
+    a = create()
+    assert.throws ->
+      result = _query a, likes: {$mod: []}
+    assert.throws ->
+      result = _query a, likes: {$mod: [5]}
 
   it "$in operator", ->
     a = create()
