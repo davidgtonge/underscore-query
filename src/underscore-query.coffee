@@ -41,6 +41,8 @@ underscoreReplacement = ->
     (item for item in array1 when array2.indexOf(item) isnt -1)
 
   out.isEqual = (a,b) -> JSON.stringify(a) is JSON.stringify(b)
+
+  out.includes = (a, b) -> b in a
   out
 
 
@@ -48,7 +50,7 @@ underscoreReplacement = ->
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
   for key in ["every", "some", "filter", "first", "find", "reject", "reduce",
-      "intersection", "isEqual", "keys", "isArray", "result", "map"]
+      "intersection", "isEqual", "keys", "isArray", "result", "map", "includes"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
@@ -107,7 +109,7 @@ parseParamType = (query) ->
 
       when "Object"
       # If the key is one of the compound keys, then parse the param as a raw query
-        if key in utils.compoundKeys
+        if utils.includes(utils.compoundKeys, key)
           o.type = key
           o.value = parseSubQuery queryParam, key
           o.key = null
@@ -142,7 +144,7 @@ parseParamType = (query) ->
         o.value = queryParam
 
     # For "$equal" queries with arrays or objects we need to perform a deep equal
-    if (o.type is "$equal") and (paramType in ["Object","Array"])
+    if (o.type is "$equal") and (utils.includes(["Object", "Array"], paramType))
       o.type = "$deepEqual"
 
     result.push(o)
@@ -188,7 +190,7 @@ testModelAttribute = (queryType, value) ->
   switch queryType
     when "$like", "$likeI", "$regex", "$startsWith", "$endsWith"  then valueType is "String"
     when "$contains", "$all", "$any", "$elemMatch" then valueType is "Array"
-    when "$size"                      then valueType in ["String","Array"]
+    when "$size"                      then utils.includes(["String","Array"], valueType)
     when "$in", "$nin"                then value?
     else true
 
@@ -197,9 +199,9 @@ performQuery = (type, value, attr, model, getter) ->
   switch type
     when "$equal"
       # If the attribute is an array then search for the query value in the array the same as Mongo
-      if utils.isArray(attr) then (value in attr) else (attr is value)
+      if utils.isArray(attr) then utils.includes(attr, value) else (attr is value)
     when "$deepEqual"       then utils.isEqual(attr, value)
-    when "$contains"        then value in attr
+    when "$contains"        then utils.includes(attr, value)
     when "$ne"              then attr isnt value
     when "$lt"              then value? and attr < value
     when "$gt"              then value? and attr > value
@@ -207,10 +209,10 @@ performQuery = (type, value, attr, model, getter) ->
     when "$gte"             then value? and attr >= value
     when "$between"         then value[0]? and value[1]? and value[0] < attr < value[1]
     when "$betweene"        then value[0]? and value[1]? and value[0] <= attr <= value[1]
-    when "$in"              then attr in value
-    when "$nin"             then attr not in value
-    when "$all"             then utils.every value, (item) -> item in attr
-    when "$any"             then utils.some attr, (item) -> item in value
+    when "$in"              then utils.includes(value, attr)
+    when "$nin"             then not utils.includes(value, attr)
+    when "$all"             then utils.every value, (item) -> utils.includes(attr, item)
+    when "$any"             then utils.some attr, (item) -> utils.includes(value, item)
     when "$size"            then attr.length is value
     when "$exists", "$has"  then attr? is value
     when "$like"            then attr.indexOf(value) isnt -1
@@ -309,7 +311,7 @@ parseQuery = (query) ->
   compoundQuery = utils.intersection utils.compoundKeys, queryKeys
 
   for type in compoundQuery
-    if type in utils.expectedArrayQueries and !utils.isArray(query[type])
+    if not utils.isArray(query[type]) and utils.includes(utils.expectedArrayQueries, type)
       throw new Error(type + ' query must be an array')
 
   # If no compound methods are found then use the "and" iterator
@@ -319,10 +321,10 @@ parseQuery = (query) ->
     # find if there is an implicit $and compundQuery operator
     if compoundQuery.length isnt queryKeys.length
       # Add the and compund query operator (with a sanity check that it doesn't exist)
-      if "$and" not in compoundQuery
+      if not utils.includes(compoundQuery, "$and")
         query.$and = {}
         compoundQuery.unshift "$and"
-      for own key, val of query when key not in utils.compoundKeys
+      for own key, val of query when not utils.includes(utils.compundKeys, key)
         query.$and[key] = val
         delete query[key]
     (for type in compoundQuery
