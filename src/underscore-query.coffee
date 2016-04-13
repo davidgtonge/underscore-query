@@ -1,13 +1,11 @@
 ###
 Underscore Query - A lightweight query API for JavaScript collections
-(c)2015 - Dave Tonge
+(c)2016 - Dave Tonge
 May be freely distributed according to MIT license.
 
 This is small library that provides a query api for JavaScript arrays similar to *mongo db*.
 The aim of the project is to provide a simple, well tested, way of filtering data in JavaScript.
 ###
-
-# *underscore* is the only dependency for this project.
 
 root = this
 
@@ -17,7 +15,7 @@ utils = {}
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
-  for key in ["every", "some", "filter", "first", "find", "reject", "reduce",
+  for key in ["every", "some", "filter", "first", "find", "reject", "reduce", "property",
       "intersection", "isEqual", "keys", "isArray", "result", "map", "includes"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
@@ -213,9 +211,8 @@ performQuery = (type, value, attr, model, getter) ->
 # $and: [queries], $or: [queries]
 # should return false if fails
 single = (queries, getter, isScore) ->
-  if utils.getType(getter) is "String"
-    method = getter
-    getter = (obj, key) -> obj[method](key)
+  getter = parseGetter(getter) if getter
+
   if isScore
     throw new Error("score operations currently don't work on compound queries") unless queries.length is 1
     queryObj = queries[0]
@@ -240,7 +237,7 @@ performQuerySingle = (type, query, getter, model, isScore) ->
     if getter
       attr = getter model, q.key
     else if q.getter
-        attr = q.getter model, q.key
+      attr = q.getter model, q.key
     else
       attr = model[q.key]
     # Check if the attribute value is the right type (some operators need a string, or an array)
@@ -258,8 +255,7 @@ performQuerySingle = (type, query, getter, model, isScore) ->
     switch type
       when "$and"
         # Early false return for $and queries when any test fails
-        unless isScore
-          return false unless test
+        return false unless isScore or test
       when "$not"
         # Early false return for $not queries when any test passes
         return false if test
@@ -313,11 +309,7 @@ parseQuery = (query) ->
 
 
 parseGetter = (getter) ->
-  if utils.getType(getter) is "String"
-    method = getter
-    getter = (obj, key) -> obj[method](key)
-  getter
-
+  return if typeof getter is 'string' then (obj, key) -> obj[getter](key) else getter
 
 class QueryBuilder
   constructor: (@items, @_getter) ->
@@ -397,14 +389,14 @@ expose = (_, mixin = true) ->
 
 # We now need to determine the environment that we are in
 
-# underscore / lodash is exposed globally, so lets mixin for the user
-if root._ then return expose(root._)
-
 # If no globals, then lets return the expose method, so users can explicitly pass in
 # their lodash or underscore reference
 if exports and module?.exports
   # we're in node land
   return module.exports = expose
+
+# underscore / lodash is exposed globally, so lets mixin for the user
+else if root._ then return expose(root._)
 
 # assuming we're in AMD land???
 return expose
