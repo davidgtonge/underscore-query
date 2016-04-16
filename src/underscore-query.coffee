@@ -16,7 +16,7 @@ utils = {}
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
   for key in ["every", "some", "filter", "first", "find", "reject", "reduce", "property",
-      "intersection", "isEqual", "keys", "isArray", "result", "map", "includes"]
+      "intersection", "isEqual", "keys", "isArray", "result", "map", "includes", "isNaN"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
@@ -118,6 +118,8 @@ parseParamType = (query) ->
 
     # For "$equal" queries with arrays or objects we need to perform a deep equal
     if (o.type is "$equal") and (utils.includes(["Object", "Array"], paramType))
+      o.type = "$deepEqual"
+    else if utils.isNaN(o.value)
       o.type = "$deepEqual"
 
     result.push(o)

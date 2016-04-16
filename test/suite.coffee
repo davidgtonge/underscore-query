@@ -5,7 +5,7 @@ _ = require "underscore"
 _collection =  [
   {title:"Home", colors:["red","yellow","blue"], likes:12, featured:true, content: "Dummy content about coffeescript", score: 0}
   {title:"About", colors:["red"], likes:2, featured:true, content: "dummy content about javascript", score: 5}
-  {title:"Contact", colors:["red","blue"], likes:20, content: "Dummy content about PHP", score: -1}
+  {title:"Contact", colors:["red","blue"], likes:20, content: "Dummy content about PHP", score: -1, total:NaN}
 ]
 
 create = -> _.clone(_collection)
@@ -32,6 +32,12 @@ module.exports = (_query) ->
     a = create()
     result = _query a, score:null
     assert.equal result.length, 0
+
+  it "equal NaN matches NaNs", ->
+    a = create()
+    result = _query a, total:NaN
+    assert.equal result.length, 1
+    assert.equal result[0].title, "Contact"
 
   it "Simple equals query with explicit $equal", ->
     a = create()
