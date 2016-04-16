@@ -1,36 +1,35 @@
 {
-    "name": "underscore-query",
-    "description": "Lightweight Query API library for Underscore and Lodash",
-    "version": "2.0.0",
-    "author": "Dave Tonge <dave.tonge@momentumft.co.uk> (https://github.com/davidgtonge)",
-    "tags": [
-        "underscore",
-        "mongo",
-        "ES5",
-        "lodash",
-        "elasticsearch",
-        "score",
-        "boost",
-        "query"
-    ],
-    "main": "./lib/underscore-query",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/davidgtonge/underscore-query.git"
-    },
-    "dependencies": {
-    },
-    "devDependencies": {
-        "coffee-script": ">=1.7.x",
-        "mocha": "",
-        "backbone":"",
-        "uglify-js": "",
-        "handlebars": "",
-        "lodash":"3.x",
-        "underscore": ">=1.6.x"
-    },
-    "scripts": {
-        "test": "mocha",
-        "build": "cake build"
-    }
+  "name": "underscore-query",
+  "description": "Lightweight Query API library for Underscore and Lodash",
+  "version": "2.1.0",
+  "author": "Dave Tonge <dave.tonge@momentumft.co.uk> (https://github.com/davidgtonge)",
+  "tags": [
+    "underscore",
+    "mongo",
+    "ES5",
+    "lodash",
+    "elasticsearch",
+    "score",
+    "boost",
+    "query"
+  ],
+  "main": "./lib/underscore-query",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidgtonge/underscore-query.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "coffee-script": ">=1.7.x",
+    "mocha": "",
+    "backbone": "",
+    "uglify-js": "",
+    "handlebars": "",
+    "lodash": "3.x",
+    "underscore": ">=1.6.x"
+  },
+  "scripts": {
+    "test": "mocha",
+    "build": "cake build"
+  }
 }
