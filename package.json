@@ -1,7 +1,7 @@
 {
   "name": "underscore-query",
   "description": "Lightweight Query API library for Underscore and Lodash",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "author": "Dave Tonge <dave.tonge@momentumft.co.uk> (https://github.com/davidgtonge)",
   "tags": [
     "underscore",
