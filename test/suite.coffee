@@ -268,6 +268,12 @@ module.exports = (_query) ->
     result = _query a, content: {$regex: 'dummy', $options: 'i'}
     assert.equal result.length, 3
 
+  it "$options errors without regexp", ->
+    a = create()
+    assert.throws(-> 
+      result = _query a, content: {$options: 'i'}
+    )
+
   it "$cb - callback", ->
     a = create()
     fn = (attr) ->

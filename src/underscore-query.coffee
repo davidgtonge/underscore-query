@@ -59,11 +59,7 @@ utils.makeGetter = (keys) ->
 
 multipleConditions = (key, queries) ->
   (for type, val of queries
-    if type == '$options' then continue
-    (o = {})[type] = val
-    o.$options = queries.$options if '$options' of queries
-    utils.makeObj key, o
-  )
+    utils.makeObj key, utils.makeObj(type, val))
 
 parseParamType = (query) ->
   result = []
@@ -101,7 +97,9 @@ parseParamType = (query) ->
         # Otherwise extract the key and value
         else
           for own type, value of queryParam
-            if type == "$options" then continue
+            if type == "$options"
+              if "$regex" of queryParam or "regexp" of queryParam then continue
+              throw new Error("$options needs a $regex")
             # Before adding the query, its value is checked to make sure it is the right type
             if testQueryValue type, value
               o.type = type
