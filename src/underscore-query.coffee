@@ -59,7 +59,11 @@ utils.makeGetter = (keys) ->
 
 multipleConditions = (key, queries) ->
   (for type, val of queries
-    utils.makeObj key, utils.makeObj(type, val))
+    if type == '$options' then continue
+    (o = {})[type] = val
+    o.$options = queries.$options if '$options' of queries
+    utils.makeObj key, o
+  )
 
 parseParamType = (query) ->
   result = []
@@ -81,6 +85,7 @@ parseParamType = (query) ->
         o.value = queryParam
 
       when "Object"
+        size = utils.keys(queryParam).length
       # If the key is one of the compound keys, then parse the param as a raw query
         if utils.includes(utils.compoundKeys, key)
           o.type = key
@@ -88,7 +93,7 @@ parseParamType = (query) ->
           o.key = null
 
         # Multiple conditions for the same key
-        else if utils.keys(queryParam).length > 1
+        else if not (size == 1 or (size == 2 and '$options' of queryParam))
           o.type = "$and"
           o.value = parseSubQuery multipleConditions(key, queryParam)
           o.key = null
@@ -96,6 +101,7 @@ parseParamType = (query) ->
         # Otherwise extract the key and value
         else
           for own type, value of queryParam
+            if type == "$options" then continue
             # Before adding the query, its value is checked to make sure it is the right type
             if testQueryValue type, value
               o.type = type
@@ -103,6 +109,11 @@ parseParamType = (query) ->
                 when "$elemMatch" then o.value = single(parseQuery(value))
                 when "$endsWith" then o.value = utils.reverseString(value)
                 when "$likeI", "$startsWith" then o.value = value.toLowerCase()
+                when "$regex", "$regexp"
+                  if typeof value == "string"
+                    o.value = new RegExp(value, queryParam.$options or "")
+                  else
+                    o.value = value
                 when "$not", "$nor", "$or", "$and"
                   o.value = parseSubQuery utils.makeObj(o.key, value)
                   o.key = null
@@ -121,7 +132,6 @@ parseParamType = (query) ->
       o.type = "$deepEqual"
     else if utils.isNaN(o.value)
       o.type = "$deepEqual"
-
     result.push(o)
 
   # Return the query object
@@ -153,7 +163,7 @@ testQueryValue = (queryType, value) ->
   switch queryType
     when "$in","$nin","$all", "$any"  then valueType is "Array"
     when "$size"                      then valueType is "Number"
-    when "$regex", "$regexp"          then valueType is "RegExp"
+    when "$regex", "$regexp"          then utils.includes(["RegExp", "String"], valueType)
     when "$like", "$likeI"            then valueType is "String"
     when "$between", "$mod"           then (valueType is "Array") and (value.length is 2)
     when "$cb"                        then valueType is "Function"
@@ -165,7 +175,7 @@ testModelAttribute = (queryType, value) ->
   switch queryType
     when "$like", "$likeI", "$regex", "$startsWith", "$endsWith"  then valueType is "String"
     when "$contains", "$all", "$any", "$elemMatch" then valueType is "Array"
-    when "$size"                      then utils.includes(["String","Array"], valueType)
+    when "$size"                      then utils.includes(["String", "Array"], valueType)
     when "$in", "$nin"                then value?
     else true
 
