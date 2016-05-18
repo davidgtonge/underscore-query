@@ -15,8 +15,8 @@ utils = {}
 # We assign local references to the underscore methods used.
 # If underscore is not supplied we use the above ES5 methods
 createUtils = (_) ->
-  for key in ["every", "some", "filter", "first", "find", "reject", "reduce", "property",
-      "intersection", "isEqual", "keys", "isArray", "result", "map", "includes", "isNaN"]
+  for key in ["every", "some", "filter", "first", "find", "reject", "reduce", "property", "sortBy"
+      "indexOf", "intersection", "isEqual", "keys", "isArray", "result", "map", "includes", "isNaN"]
     utils[key] = _[key]
     throw new Error("#{key} missing. Please ensure that you first initialize
       underscore-query with either lodash or underscore") unless utils[key]
@@ -135,6 +135,18 @@ parseParamType = (query) ->
   # Return the query object
   return result
 
+# Order in which to sort tags in order to optimize speed. Tags at the start of this array
+# are ones which can be evaluated quickly in order to avoid running the slower tags
+tag_sort_order = [
+  "$lt", "$lte", "$gt", "$gte",
+  "$exists", "$has", "$type", "$ne", "$equal",
+  "$mod", "$size", "$between", "$betweene",
+  "$startsWith", "$endsWith", "$like", "$likeI",
+  "$cb", "$regex", "$regexp",
+  "$contains", "$in", "$nin", "$all", "$any",
+  "$deepEqual", "$elemMatch",
+  "$not", "$and", "$or", "$nor"
+]
 
 # This function parses and normalizes raw queries.
 parseSubQuery = (rawQuery, type) ->
@@ -153,7 +165,12 @@ parseSubQuery = (rawQuery, type) ->
       memo.concat parsed
 
   # Loop through all the different queries
-  utils.reduce(queryArray, iteratee, [])
+  result = utils.reduce(queryArray, iteratee, [])
+  # Attempt to optimize the query path
+  utils.sortBy(result, (x) ->
+    index = utils.indexOf(tag_sort_order, x.type)
+    if index >= 0 then index else Infinity
+  )
 
 # Tests query value, to ensure that it is of the correct type
 testQueryValue = (queryType, value) ->
@@ -194,25 +211,25 @@ performQuery = (type, value, attr, model, getter) ->
       # If the attribute is an array then search for the query value in the array the same as Mongo
       if utils.isArray(attr) then utils.includes(attr, value) else (attr is value)
     when "$deepEqual"       then utils.isEqual(attr, value)
-    when "$contains"        then utils.includes(attr, value)
     when "$ne"              then attr isnt value
+    when "$type"            then typeof attr is value
     when "$lt"              then value? and attr < value
     when "$gt"              then value? and attr > value
     when "$lte"             then value? and attr <= value
     when "$gte"             then value? and attr >= value
     when "$between"         then value[0]? and value[1]? and value[0] < attr < value[1]
     when "$betweene"        then value[0]? and value[1]? and value[0] <= attr <= value[1]
+    when "$size"            then attr.length is value
+    when "$exists", "$has"  then attr? is value
+    when "$contains"        then utils.includes(attr, value)
     when "$in"              then utils.includes(value, attr)
     when "$nin"             then not utils.includes(value, attr)
     when "$all"             then utils.every value, (item) -> utils.includes(attr, item)
     when "$any"             then utils.some attr, (item) -> utils.includes(value, item)
-    when "$size"            then attr.length is value
-    when "$exists", "$has"  then attr? is value
     when "$like"            then attr.indexOf(value) isnt -1
     when "$likeI"           then attr.toLowerCase().indexOf(value) isnt -1
     when "$startsWith"      then attr.toLowerCase().indexOf(value) is 0
     when "$endsWith"        then utils.reverseString(attr).indexOf(value) is 0
-    when "$type"            then typeof attr is value
     when "$regex", "$regexp" then value.test attr
     when "$mod"             then (attr % value[0]) is value[1]
     else false
