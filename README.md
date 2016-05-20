@@ -254,6 +254,14 @@ _.query( MyCollection, { colors: {$any:["red", "yellow"] } });
 // Returns models which have either "red" or "yellow" in their colors attribute.
 ```
 
+### $none
+Inverse of $any. Returns an array of items where none of the results match
+
+```js
+_.query( MyCollection, { colors: {$none:["yellow", "black"] } });
+// Returns models which are neither "black" or "yellow" in their colors attribute.
+```
+
 ### $size
 Assumes the model property has a length (i.e. is either an array or a string).
 Only returns models the model property's length matches the supplied values

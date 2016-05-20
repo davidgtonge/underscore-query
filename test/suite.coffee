@@ -189,6 +189,11 @@ module.exports = (_query) ->
     result = _query a, colors: {$any: ["yellow","blue"]}
     assert.equal result.length, 2
 
+  it "$none operator", ->
+    a = create()
+    result = _query a, colors: {$none: ["yellow","blue"]}
+    assert.deepEqual result, [a[1]]
+
   it "$size operator", ->
     a = create()
     result = _query a, colors: {$size: 3}

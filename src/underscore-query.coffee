@@ -142,8 +142,8 @@ tag_sort_order = [
   "$exists", "$has", "$type", "$ne", "$equal",
   "$mod", "$size", "$between", "$betweene",
   "$startsWith", "$endsWith", "$like", "$likeI",
+  "$contains", "$in", "$nin", "$all", "$any", "$none",
   "$cb", "$regex", "$regexp",
-  "$contains", "$in", "$nin", "$all", "$any",
   "$deepEqual", "$elemMatch",
   "$not", "$and", "$or", "$nor"
 ]
@@ -176,12 +176,12 @@ parseSubQuery = (rawQuery, type) ->
 testQueryValue = (queryType, value) ->
   valueType = utils.getType(value)
   switch queryType
-    when "$in","$nin","$all", "$any"  then valueType is "Array"
-    when "$size"                      then valueType is "Number"
-    when "$regex", "$regexp"          then utils.includes(["RegExp", "String"], valueType)
-    when "$like", "$likeI"            then valueType is "String"
-    when "$between", "$mod"           then (valueType is "Array") and (value.length is 2)
-    when "$cb"                        then valueType is "Function"
+    when "$in", "$nin", "$all", "$any", "$none" then valueType is "Array"
+    when "$size"                then valueType is "Number"
+    when "$regex", "$regexp"    then utils.includes(["RegExp", "String"], valueType)
+    when "$like", "$likeI"      then valueType is "String"
+    when "$between", "$mod"     then (valueType is "Array") and (value.length is 2)
+    when "$cb"                  then valueType is "Function"
     else true
 
 # Test each attribute that is being tested to ensure that is of the correct type
@@ -226,6 +226,7 @@ performQuery = (type, value, attr, model, getter) ->
     when "$nin"             then not utils.includes(value, attr)
     when "$all"             then utils.every value, (item) -> utils.includes(attr, item)
     when "$any"             then utils.some attr, (item) -> utils.includes(value, item)
+    when "$none"            then not utils.some attr, (item) -> utils.includes(value, item)
     when "$like"            then attr.indexOf(value) isnt -1
     when "$likeI"           then attr.toLowerCase().indexOf(value) isnt -1
     when "$startsWith"      then attr.toLowerCase().indexOf(value) is 0
