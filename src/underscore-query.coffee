@@ -80,6 +80,15 @@ parseParamType = (query) ->
         o.type = "$#{paramType.toLowerCase()}"
         o.value = queryParam
 
+      when "Array"
+        if utils.includes(utils.compoundKeys, key)
+          o.type = key
+          o.value = parseSubQuery queryParam, key
+          o.key = null
+        else
+          o.type = "$equal"
+          o.value = queryParam
+
       when "Object"
         size = utils.keys(queryParam).length
       # If the key is one of the compound keys, then parse the param as a raw query

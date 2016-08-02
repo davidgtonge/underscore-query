@@ -938,3 +938,15 @@ module.exports = (_query) ->
     assert.equal(res.length, 1)
     res = _query tweets, {"entities.user_mentions.id_str": "10228273"}
     assert.equal(res.length, 0)
+
+
+  it "compound $ands (#29)", ->
+    a = create()
+
+    res = _query(a, {
+      $and: [{
+        $and: [ likes: {$gt: 5 } ]
+      }]
+    })
+
+    assert.equal(res.length, 2)
