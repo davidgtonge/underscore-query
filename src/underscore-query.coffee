@@ -428,7 +428,7 @@ expose = (_, mixin = true) ->
 
 # If no globals, then lets return the expose method, so users can explicitly pass in
 # their lodash or underscore reference
-if exports and module?.exports
+if typeof exports != "undefined" and module?.exports
   # we're in node land
   return module.exports = expose
 
