@@ -8,7 +8,7 @@ This project was originally [Backbone Query](https://github.com/davidgtonge/back
 was useful to have the ability to query arrays as well as Backbone Collections. So the library has been ported to
 underscore, and backbone-query now uses underscore-query.
 
-In updating the prokect serveral new features have been added, including the ability to use a chainable query api.
+In updating the project several new features have been added, including the ability to use a chainable query api.
 
 ### Features
 
